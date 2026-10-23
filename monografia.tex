@@ -6,8 +6,8 @@
 %  - Graduação: bacharelado|engenharia|licenciatura
 %  - Pós-graduação: [qualificacao], mestrado|doutorado, ppca|ppginf
 
-% \documentclass[engenharia]{UnB-CIC}%
-\documentclass[qualificacao,mestrado,ppca]{UnB-CIC}%
+\documentclass[engenharia]{UnB-CIC}%
+% \documentclass[qualificacao,mestrado,ppca]{UnB-CIC}%
 
 \usepackage{pdfpages}% incluir PDFs, usado no apêndice
 
@@ -15,20 +15,22 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Informações do Trabalho
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\orientador{\prof \dr Guilherme Novaes Ramos}{CIC/UnB}%
+\orientador{\prof \dr Edson Mintsu}{ENE/UnB}%
 %\coorientador{\prof \dr José Ralha}{CIC/UnB}
-\coordenador[a]{\prof[a] \dr[a] Ada Lovelace}{Bibliothèque universelle de Genève}%
-\diamesano{24}{dezembro}{2014}%
+\coordenador{\prof \dr Guilherme Novaes Ramos}{CIC/UnB}%
+\diamesano{11}{outubro}{2026}%
 
-\membrobanca{\prof \dr Donald Knuth}{Stanford University}%
-\membrobanca{\dr Leslie Lamport}{Microsoft Research}%
+\membrobanca{\prof \dr test0}{empresa0}%
+\membrobanca{\dr test1}{empresa1}%
+\membrobanca{\dr test2}{empresa2}%
 
-\autor{Guilherme N.}{Ramos}%
+\autor{Thiago C. R.}{Rabelo}%
+\coautor{Miguel C.}{de Medeiros}%
 
-\titulo{UnB-CIC: Uma classe em LaTeX para textos do Departamento de Ciência da Computação}%
+\titulo{Aplicativo de acessibilidade com uso de eye-tracking para comunicação}%
 
-\palavraschave{LaTeX, metodologia científica, trabalho de conclusão de curso}%
-\keywords{LaTeX, scientific method, thesis}%
+\palavraschave{eye-tracking}%
+\keywords{eye-tracking}%
 
 \newcommand{\unbcic}{\texttt{UnB-CIC}}%
 
@@ -37,10 +39,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}%
     \capitulo{1_Introducao}{Introdução}%
-    \capitulo{2_UnB-CIC}{A Classe \unbcic}%
-    \capitulo{3_TCC}{Trabalho de Conclusão de Curso}%
-    \capitulo{4_Apresentacao}{Apresentações}%
+    \capitulo{2_Referencial_Teorico}{Referencial Teórico}%
+    \capitulo{3_Metodologia_e_Desenvolvimento}{Metodologia e Desenvolvimento}%
+    \capitulo{4_Resultados}{Resultados}%
+    \capitulo{5_Conclusoes}{Conclusões}%
+    % \capitulo{2_UnB-CIC}{A Classe \unbcic}%
+    % \capitulo{3_TCC}{Trabalho de Conclusão de Curso}%
+    % \capitulo{4_Apresentacao}{Apresentações}%
 
-    \apendice{Apendice_Fichamento}{Fichamento de Artigo Científico}%
-    \anexo{Anexo1}{Documentação Original \unbcic\ (parcial)}%
+    % \apendice{Apendice_Fichamento}{Fichamento de Artigo Científico}%
+    % \anexo{Anexo1}{Documentação Original \unbcic\ (parcial)}%
 \end{document}%

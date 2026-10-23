@@ -1,0 +1,68 @@
+\section{Flutter}
+
+Flutter é um \textit{framework} de código aberto, criado pelo Google e lançado em versão estável em dezembro de 2018, destinado à construção de interfaces gráficas a partir de uma única base de código para múltiplas plataformas, incluindo Android, iOS, \textit{web} e aplicações \textit{desktop} (Windows, macOS e Linux).
+
+A arquitetura do Flutter é organizada em camadas, divididas em duas partes: uma dependente de plataforma e outra agnóstica a \textit{hardware}~\cite{flutter_docs}. Na base encontra-se o \textit{runner}, a aplicação nativa de cada sistema operacional (no Android, um projeto convencional com uma \texttt{Activity}) que serve de ponto de entrada e hospeda o conteúdo Flutter. Acima dele, o \textit{embedder}, escrito na linguagem nativa da plataforma, integra o Flutter ao sistema hospedeiro: cria a superfície de renderização, gerencia o laço de eventos e as \textit{threads}, encaminha a entrada do usuário e dá acesso a serviços como acessibilidade e canais de comunicação. A partir daí, as camadas superiores são independentes do dispositivo. O motor (\textit{engine}), escrito em C++, é responsável pela rasterização das cenas, pela composição gráfica, pela renderização de texto e pela execução da máquina virtual Dart. Sobre ele, o \textit{framework}, escrito em Dart, expõe o modelo de programação baseado em \textit{widgets}: toda a interface é descrita de forma declarativa como uma árvore de componentes imutáveis, que é reconstruída sempre que o estado da aplicação muda. No topo, a aplicação propriamente dita compõe esses \textit{widgets} para implementar sua lógica e interface. Esse modelo declarativo, inspirado em bibliotecas reativas como o React, simplifica a sincronização entre dados e interface, uma vez que o desenvolvedor descreve \textit{o que} deve ser exibido para um dado estado, e não \textit{como} transitar de uma tela para outra.
+
+No contexto de dispositivos móveis, o Flutter oferece duas características relevantes para o desenvolvimento. A primeira é o \textit{hot reload}, que injeta alterações no código-fonte diretamente na máquina virtual Dart em execução, permitindo observar o resultado em menos de um segundo sem reiniciar a aplicação ou perder seu estado. A segunda é a compilação antecipada (\textit{ahead-of-time}, AOT) para código de máquina nativo nas versões de produção, o que elimina a sobrecarga de interpretação em tempo de execução e garante desempenho próximo ao de aplicações escritas diretamente em Kotlin ou Swift~\cite{flutter_docs}. Essas propriedades, aliadas à ampla biblioteca de \textit{widgets} que implementam as diretrizes do Material Design, tornam o \textit{framework} uma opção adequada para o desenvolvimento de interfaces responsivas em celulares e \textit{tablets}, como a proposta neste trabalho.
+
+\subsection{Android} \label{sec:android}
+
+Android é um sistema operacional para dispositivos móveis baseado no núcleo Linux, desenvolvido pela Open Handset Alliance sob a liderança do Google e distribuído como software de código aberto por meio do Android Open Source Project (AOSP)~\cite{android_docs}. Sua primeira versão comercial foi lançada em 2008 e, desde então, consolidou-se como a plataforma móvel de maior participação de mercado mundial, estando presente em celulares, \textit{tablets}, relógios, televisores e sistemas automotivos~\cite{statcounter_mobile_os}.
+
+As aplicações Android são distribuídas em pacotes (APK ou \textit{Android App Bundle}) e executadas pelo Android Runtime (ART), que compila o código da aplicação para instruções nativas do dispositivo. Cada aplicação é executada em um processo isolado, com identidade de usuário própria no nível do Linux, o que constitui a base do modelo de segurança da plataforma~\cite{android_docs}. O acesso a recursos sensíveis, como câmera, microfone, localização e armazenamento, é mediado por um sistema de permissões: a aplicação declara no arquivo de manifesto (\texttt{AndroidManifest.xml}) os recursos que pretende utilizar e, a partir do Android 6.0 (API 23), as permissões consideradas perigosas devem ser solicitadas ao usuário em tempo de execução, no momento em que o recurso será utilizado~\cite{android_permissions}.
+
+A escolha do Android como plataforma alvo deste trabalho justifica-se pela sua predominância no mercado brasileiro e pela disponibilidade de dispositivos de baixo custo com câmera frontal, requisito fundamental para o rastreamento ocular proposto. No Flutter, uma aplicação Android é composta por um projeto Android convencional que hospeda o motor do \textit{framework} em uma \texttt{Activity}, de modo que todas as ferramentas e bibliotecas nativas da plataforma permanecem acessíveis ao desenvolvedor.
+
+\subsection{Dart}
+
+Dart é a linguagem de programação utilizada pelo Flutter. Foi criada no Google por Lars Bak e Kasper Lund e apresentada publicamente em outubro de 2011, com o objetivo inicial de oferecer uma alternativa estruturada ao JavaScript para o desenvolvimento de aplicações \textit{web} de grande porte~\cite{bracha2015dart}. A linguagem foi padronizada pela Ecma International em 2014 (ECMA-408) e, com o surgimento do Flutter, teve seu foco redirecionado para o desenvolvimento de aplicações cliente multiplataforma. A versão 2.0, de 2018, introduziu um sistema de tipos estático e sólido (\textit{sound}), e a versão 3.0, de 2023, tornou obrigatória a segurança contra valores nulos (\textit{null safety}), além de adicionar registros e casamento de padrões~\cite{dart_docs}.
+
+Dart é uma linguagem orientada a objetos com coleta de lixo automática e sintaxe semelhante à de C e Java, o que reduz a curva de aprendizado para desenvolvedores familiarizados com essas linguagens. Toda variável referencia um objeto, e todo objeto é instância de uma classe, incluindo tipos primitivos como números e valores booleanos. O sistema de tipos combina anotações explícitas com inferência, de modo que o compilador detecta grande parte dos erros antes da execução~\cite{dart_docs}.
+
+Dois aspectos da linguagem são particularmente relevantes para aplicações móveis. O primeiro é o modelo de concorrência: o código Dart executa em uma única \textit{thread} com um laço de eventos (\textit{event loop}), e operações demoradas, como requisições de rede e acesso a arquivos, são representadas por objetos \texttt{Future} e \texttt{Stream}, manipulados com as palavras-chave \texttt{async} e \texttt{await}. Processamento paralelo intensivo pode ser delegado a \textit{isolates}, unidades de execução independentes que não compartilham memória e se comunicam por troca de mensagens, evitando condições de corrida~\cite{dart_docs}. O segundo é a flexibilidade de compilação: a mesma base de código pode ser executada por um compilador \textit{just-in-time} (JIT) durante o desenvolvimento, o que viabiliza o \textit{hot reload}, e compilada de forma antecipada (AOT) para código nativo ARM ou x64 na distribuição, o que garante inicialização rápida e desempenho previsível no dispositivo final.
+
+\subsection{Acesso a Recursos Nativos}
+
+Por ser executado sobre sua própria máquina virtual e motor gráfico, o código Dart de uma aplicação Flutter não tem acesso direto às APIs do sistema operacional hospedeiro. A comunicação com recursos de \textit{hardware}, como câmera, sensores e microfone, segue um padrão definido pelo \textit{framework} denominado \textit{platform channels}: canais de mensagens assíncronas e bidirecionais entre o código Dart e o código nativo da plataforma, escrito em Kotlin ou Java no caso do Android~\cite{flutter_platform_channels}. O lado Dart invoca um método nomeado por meio de um \texttt{MethodChannel}; a mensagem é serializada em um formato binário padrão, entregue ao lado nativo, que executa a operação utilizando as APIs do Android e devolve o resultado pelo mesmo canal. Para fluxos contínuos de dados, como quadros de vídeo ou leituras de sensores, utiliza-se o \texttt{EventChannel}, que expõe os eventos nativos ao Dart como um \texttt{Stream}. Esse mecanismo mantém a lógica de negócio independente de plataforma e confina o código específico de cada sistema a uma camada bem delimitada.
+
+Na prática, o desenvolvedor raramente implementa esses canais manualmente. O ecossistema Flutter organiza o acesso a recursos nativos em \textit{plugins}: pacotes Dart que encapsulam, para cada plataforma suportada, a implementação nativa correspondente e expõem uma API unificada. Os \textit{plugins} são distribuídos pelo repositório oficial \textit{pub.dev}, e os mais fundamentais são mantidos pela própria equipe do Flutter. É o caso do \textit{plugin} \texttt{camera}, utilizado neste trabalho, que no Android se apoia nas bibliotecas CameraX e Camera2 do Android Jetpack para enumerar as câmeras disponíveis, iniciar a pré-visualização, capturar imagens e fornecer o fluxo de quadros brutos à aplicação~\cite{flutter_camera_plugin}. Esse fluxo de quadros, entregue ao código Dart como um \texttt{Stream}, é o que permite processar continuamente as imagens da câmera frontal para a estimativa do olhar.
+
+O acesso à câmera também está sujeito ao modelo de permissões do Android descrito na Seção~\ref{sec:android}. A aplicação deve declarar a permissão \texttt{android.permission.CAMERA} no manifesto e, por se tratar de uma permissão classificada como perigosa, solicitá-la explicitamente ao usuário em tempo de execução; o \textit{plugin} encapsula essa solicitação e reporta ao código Dart, por meio de exceções, os casos em que ela é negada. Para situações não cobertas por \textit{plugins} existentes, o Flutter oferece ainda a interface de função estrangeira (\texttt{dart:ffi}), que permite chamar diretamente bibliotecas nativas em C sem passar pelos canais de plataforma, alternativa adequada quando o custo de serialização das mensagens é crítico, como no processamento de imagens em tempo real.
+
+\section{Inteligência Artificial}
+    % Breve introdução com a ideia básica do que é
+    \subsection{Machine Learning}
+    % Breve história e explicação do que é
+    % Pontos importantes de treinamento e validação
+    % Funcionamento das redes neurais
+    % Processo da inferência
+    \subsection{Eye-tracking}
+    % Opções já existentes e suas técnicas
+    %   Opções com hardware próprio
+    %   Opções sem hardware próprio
+    %       Opções de uso da IA para a inferência
+    % Para toda essa seção olhar no Notion
+    \subsection{YOLO}
+    % Ideia básica do YOLO
+    % Versões do modelo (já dizer qual nós escolhemos)
+    \subsection{Reconhecimento de Rostos por mlkit}
+    % Ideia básica do modelo e da biblioteca utilizada
+\section{Filtro de Kalman}
+    % Ideia básica e principais equações
+\section{Preenchimento automático de palavras}
+    %   Principais algoritmos
+    %   Olhar no Notion
+  \subsection{N-Gramas}
+  \subsection{Fuzzy Search (algoritmos de autocomplete)}
+  \subsection{Trie}
+  \subsection{Métricas}
+    - (KSPC, WPM...)
+    
+\section{Text to Speech (TTS)}
+    % Ideia básica dos modelos
+    % Ideia do Kokoro
+    % Uso com o sherpa
+    % Olhar no Notion
+
+
