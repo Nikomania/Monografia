@@ -50,15 +50,143 @@ O acesso à câmera também está sujeito ao modelo de permissões do Android de
     % Ideia básica do modelo e da biblioteca utilizada
 \section{Filtro de Kalman}
     % Ideia básica e principais equações
-\section{Preenchimento automático de palavras}
-    %   Principais algoritmos
-    %   Olhar no Notion
-  \subsection{N-Gramas}
-  \subsection{Fuzzy Search (algoritmos de autocomplete)}
-  \subsection{Trie}
-  \subsection{Métricas}
-    - (KSPC, WPM...)
-    
+\section{Preenchimento automático de palavras} \label{sec:preenchimento}
+
+Digitar com o olhar é lento: cada tecla é acionada mantendo-se o olhar sobre ela por um intervalo predefinido, o tempo de permanência (\textit{dwell time}), que costuma variar de cerca de 400~ms a mais de 1.000~ms~\cite{mackenzie2008eye}. Em um estudo com teclado QWERTY na tela e tempo de permanência de 900~ms, participantes sem deficiência atingiram médias entre 7,00 e 7,55 palavras por minuto~\cite{majaranta2003auditory}. O preenchimento automático reduz o número de seleções necessárias: o sistema exibe uma pequena lista de palavras candidatas, que completam a palavra já iniciada ou antecipam a próxima, e o usuário escolhe a desejada em vez de soletrá-la~\cite{mackenzie2008eye}. Com isso, o número médio de toques por caractere pode ficar abaixo de um~\cite{mackenzie2002kspc}.
+
+Cada sugestão, porém, tem um custo: listas maiores aumentam a chance de a palavra desejada aparecer, mas também o tempo gasto para percorrê-las com os olhos, e o rastreamento ocular exige botões grandes, o que inviabiliza listas longas~\cite{mackenzie2008eye}. O desempenho depende, portanto, de ordenar poucas candidatas de modo que a palavra pretendida esteja entre as primeiras, que é a função de um modelo de linguagem. As subseções a seguir apresentam os modelos de linguagem (Seção~\ref{sec:modelos_linguagem}), os n-gramas e a estimativa de suas probabilidades (Seção~\ref{sec:ngramas}), as limitações desses modelos (Seção~\ref{sec:limitacoes_ngramas}), a técnica de suavização \textit{Stupid Backoff} (Seção~\ref{sec:suavizacao}) e as métricas de avaliação da entrada de texto (Seção~\ref{sec:metricas}).
+
+\subsection{Modelos de Linguagem} \label{sec:modelos_linguagem}
+
+Um modelo de linguagem é um modelo que atribui uma probabilidade a cada palavra que pode vir a seguir em um texto, ou seja, que fornece uma distribuição de probabilidade sobre as possíveis próximas palavras. De forma equivalente, ele pode atribuir uma probabilidade a uma frase inteira, o que permite, por exemplo, reconhecer que uma sequência de palavras em ordem natural é muito mais provável do que as mesmas palavras embaralhadas~\cite[cap.~3]{jurafsky2026slp}. Diante do início de frase ``eu quero beber'', um bom modelo deve considerar ``água'' muito mais provável do que ``cadeira'' como continuação.
+
+O problema central é estimar a probabilidade $P(w \mid h)$ de uma palavra $w$ dado o histórico $h$ das palavras anteriores. Uma estratégia ingênua seria contar, em um grande conjunto de textos (\textit{corpus}), quantas vezes o histórico completo aparece e quantas dessas vezes ele é seguido por $w$. Essa estratégia falha porque a linguagem é criativa: frases novas são produzidas o tempo todo, e mesmo um \textit{corpus} do tamanho da \textit{web} não contém ocorrências suficientes de cada frase longa para que as contagens sejam confiáveis~\cite[cap.~3]{jurafsky2026slp}. Representando uma sequência de $n$ palavras por $w_{1:n} = w_1, w_2, \ldots, w_n$, a regra da cadeia da probabilidade decompõe a probabilidade da sequência em um produto de probabilidades condicionais:
+\begin{equation}
+    P(w_{1:n}) = P(w_1)\,P(w_2 \mid w_1)\,P(w_3 \mid w_{1:2}) \cdots P(w_n \mid w_{1:n-1}) = \prod_{k=1}^{n} P(w_k \mid w_{1:k-1}).
+    \label{eq:regra_cadeia}
+\end{equation}
+A decomposição, por si só, não resolve o problema, pois cada fator ainda depende de todo o histórico anterior, que pode nunca ter sido observado.
+
+\subsection{N-Gramas} \label{sec:ngramas}
+
+A ideia dos n-gramas é aproximar o histórico completo apenas pelas últimas palavras. Um n-grama é uma sequência de $N$ palavras: um bigrama ($N = 2$) é um par de palavras consecutivas, como ``quero beber'', e um trigrama ($N = 3$) é uma sequência de três, como ``eu quero beber''. Por extensão, o mesmo termo designa o modelo probabilístico que estima a probabilidade de uma palavra a partir das $N-1$ palavras que a precedem~\cite[cap.~3]{jurafsky2026slp}:
+\begin{equation}
+    P(w_n \mid w_{1:n-1}) \approx P(w_n \mid w_{n-N+1:n-1}).
+    \label{eq:markov}
+\end{equation}
+Assumir que a próxima palavra depende apenas de uma janela fixa de palavras anteriores é uma hipótese de Markov, e os modelos de n-gramas pertencem, portanto, à classe dos modelos de Markov. A matemática por trás deles remonta a Markov, que em 1913 usou cadeias desse tipo para prever se a próxima letra de \textit{Eugênio Onêguin}, de Púchkin, seria vogal ou consoante~\cite[cap.~3]{jurafsky2026slp}. Shannon~\cite{shannon1948mathematical} aplicou a mesma ideia à língua inglesa, gerando sequências artificiais de letras e de palavras a partir de estatísticas de ordem crescente e mostrando que elas se aproximam cada vez mais de um texto real à medida que mais contexto é considerado.
+
+Os parâmetros de um modelo de n-gramas são estimados por máxima verossimilhança (\textit{maximum likelihood estimation}): obtêm-se as contagens no \textit{corpus} de treinamento e normalizam-se esses valores para que fiquem entre 0 e 1~\cite[cap.~3]{jurafsky2026slp}. Sendo $C(\cdot)$ o número de ocorrências de uma sequência no \textit{corpus}, a probabilidade de um bigrama é a contagem $C(w_{n-1}\,w_n)$ dividida pela soma das contagens de todos os bigramas que começam com $w_{n-1}$. Como essa soma é igual à contagem da própria palavra $w_{n-1}$, a expressão se simplifica~\cite[cap.~3]{jurafsky2026slp}:
+\begin{equation}
+    P(w_n \mid w_{n-1}) = \frac{C(w_{n-1}\,w_n)}{\sum_{w} C(w_{n-1}\,w)} = \frac{C(w_{n-1}\,w_n)}{C(w_{n-1})}.
+    \label{eq:mle}
+\end{equation}
+O mesmo raciocínio vale para qualquer ordem~\cite[cap.~3]{jurafsky2026slp}. No trigrama, usado neste trabalho, o contexto passa a ser formado pelas duas palavras anteriores:
+\begin{equation}
+    P(w_n \mid w_{n-2}\,w_{n-1}) = \frac{C(w_{n-2}\,w_{n-1}\,w_n)}{C(w_{n-2}\,w_{n-1})}.
+    \label{eq:mle_trigrama}
+\end{equation}
+Essa razão entre a frequência observada de uma sequência e a de seu prefixo é chamada de frequência relativa, e as probabilidades assim obtidas são as que tornam o \textit{corpus} de treinamento o mais provável possível segundo o modelo~\cite[cap.~3]{jurafsky2026slp}. Para que as primeiras palavras de cada frase também tenham um contexto, acrescentam-se ao início de cada frase símbolos especiais \texttt{<s>}; no trigrama são necessários dois, de modo que a primeira palavra é estimada por $P(w_1 \mid \texttt{<s>}\,\texttt{<s>})$~\cite[cap.~3]{jurafsky2026slp}.
+
+A Tabela~\ref{tab:trigramas} aplica a Equação~\ref{eq:mle_trigrama} a quatro frases do \textit{corpus} de \gls{CAA} deste trabalho, já acrescidas dos símbolos de início:
+\begin{center}
+    \begin{tabular}{l}
+        \texttt{<s> <s> eu quero beber água}\\
+        \texttt{<s> <s> eu quero beber café}\\
+        \texttt{<s> <s> eu quero comer}\\
+        \texttt{<s> <s> eu estou com fome}
+    \end{tabular}
+\end{center}
+Como ``eu'' inicia as quatro frases, $P(\textrm{eu} \mid \texttt{<s>}\,\texttt{<s>}) = 4/4 = 1$. O contexto ``\texttt{<s>} eu'' é seguido três vezes por ``quero'' e uma vez por ``estou'', e o contexto ``eu quero'', que aparece três vezes, é seguido duas vezes por ``beber'' e uma por ``comer''. Assim, depois de o usuário digitar ``eu quero'', o modelo sugeriria ``beber'' em primeiro lugar e ``comer'' em segundo.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Probabilidades de trigramas estimadas pela Equação~\ref{eq:mle_trigrama} em quatro frases do \textit{corpus} de \gls{CAA}.}
+    \label{tab:trigramas}
+    \begin{tabular}{llccc}
+        \hline
+        Contexto ($w_{n-2}\,w_{n-1}$) & Palavra ($w_n$) & $C(w_{n-2}\,w_{n-1}\,w_n)$ & $C(w_{n-2}\,w_{n-1})$ & $P$ \\
+        \hline
+        \texttt{<s> <s>} & eu & 4 & 4 & 1,00 \\
+        \texttt{<s>} eu & quero & 3 & 4 & 0,75 \\
+        \texttt{<s>} eu & estou & 1 & 4 & 0,25 \\
+        eu quero & beber & 2 & 3 & 0,67 \\
+        eu quero & comer & 1 & 3 & 0,33 \\
+        quero beber & água & 1 & 2 & 0,50 \\
+        quero beber & café & 1 & 2 & 0,50 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+O \textit{corpus} completo tem 565 frases, que somam 2.695 palavras e um vocabulário de 767 palavras distintas (sua construção é descrita no \refCap{3_Metodologia_e_Desenvolvimento}). As contagens são maiores, mas o cálculo é o mesmo: o contexto ``estou com'', por exemplo, aparece 27 vezes, 3 delas seguido de ``dor'', o que resulta em $P(\textrm{dor} \mid \textrm{estou com}) = 3/27 \approx 0{,}11$.
+
+\subsection{Limitações dos N-Gramas} \label{sec:limitacoes_ngramas}
+
+Como as probabilidades são obtidas diretamente das contagens, o modelo reflete as características do \textit{corpus} em que foi treinado, e um modelo treinado em textos de um gênero tem desempenho ruim em textos de outro. Por isso, recomenda-se que o \textit{corpus} de treinamento seja do mesmo gênero da tarefa a que o modelo se destina~\cite[cap.~3]{jurafsky2026slp}; para um sistema de \gls{CAA}, isso significa usar frases da comunicação do dia a dia, e não textos jornalísticos ou literários. Além disso, quanto maior o valor de $N$, mais esparsas ficam as contagens: com um vocabulário de $V$ palavras existem $V^2$ bigramas possíveis, dos quais apenas uma fração mínima aparece em qualquer \textit{corpus}~\cite[cap.~3]{jurafsky2026slp}. No \textit{corpus} deste trabalho, com $V = 767$, há cerca de 588 mil bigramas possíveis, mas apenas 1.439 deles (0,24\%) ocorrem nas frases. Por fim, o número de parâmetros cresce exponencialmente com a ordem do modelo, e os n-gramas não generalizam de um exemplo para outro a menos que as palavras sejam idênticas: o modelo nada sabe sobre uma sequência que nunca viu, ainda que ela seja muito parecida com outras observadas no treinamento~\cite[cap.~3]{jurafsky2026slp}.
+
+Os grandes modelos de linguagem atuais, baseados em redes neurais, superam essas limitações ao representar as palavras em um espaço contínuo, no qual palavras usadas em contextos semelhantes recebem representações semelhantes~\cite[cap.~3]{jurafsky2026slp}. Ao discutir a predição em sistemas de \gls{CAA}, Pereira \textit{et al.}~\cite{pereira2024predictive} observam que modelos neurais podem ter desempenho superior ao dos n-gramas, mas exigem mais recursos computacionais para treinamento e execução, o que dificulta sua implantação; os n-gramas, por sua vez, produzem bons resultados com \textit{corpora} relativamente pequenos. Para um aplicativo que deve funcionar sem conexão com a internet em \textit{tablets} comuns, treinado com um conjunto restrito de frases de comunicação, essas características tornam os n-gramas uma escolha adequada, como detalhado no \refCap{3_Metodologia_e_Desenvolvimento}.
+
+\subsection{Suavização e \textit{Stupid Backoff}} \label{sec:suavizacao}
+
+A estimativa por máxima verossimilhança atribui probabilidade zero a qualquer n-grama ausente do \textit{corpus} de treinamento, ainda que ele seja perfeitamente aceitável na língua. As técnicas de suavização (\textit{smoothing}) tratam esse problema retirando uma parte da massa de probabilidade dos eventos mais frequentes e redistribuindo-a para os não observados; entre as mais simples estão a suavização de Laplace, que soma uma unidade a todas as contagens, a interpolação entre modelos de ordens diferentes e o \textit{backoff}~\cite[cap.~3]{jurafsky2026slp}. No \textit{backoff}, quando o n-grama procurado tem contagem nula, o modelo recorre ao (n$-$1)-grama e continua reduzindo o contexto até encontrar um histórico que tenha sido observado. Para que o resultado continue sendo uma distribuição de probabilidade, as estimativas de ordem mais alta precisam ser descontadas, reservando massa para as de ordem mais baixa~\cite[cap.~3]{jurafsky2026slp}, como faz o \textit{backoff} de Katz~\cite{katz1987estimation}.
+
+O \textit{Stupid Backoff}, proposto por Brants \textit{et al.}~\cite{brants2007large}, simplifica esse esquema ao abandonar a exigência de uma distribuição de probabilidade: não há desconto, e as frequências relativas são usadas diretamente. Por isso, os valores produzidos são chamados de pontuações ($S$) e não de probabilidades. Para um contexto de $k-1$ palavras,
+\begin{equation}
+    S(w_i \mid w_{i-k+1:i-1}) =
+    \begin{cases}
+        \dfrac{C(w_{i-k+1:i})}{C(w_{i-k+1:i-1})} & \text{se } C(w_{i-k+1:i}) > 0,\\[2ex]
+        \alpha\, S(w_i \mid w_{i-k+2:i-1}) & \text{caso contrário,}
+    \end{cases}
+    \label{eq:stupid_backoff}
+\end{equation}
+e a recursão termina nos unigramas, com $S(w_i) = C(w_i)/M$, em que $M$ é o número total de palavras do \textit{corpus}. O fator de redução $\alpha$ poderia variar com a ordem do contexto, mas os autores usaram um único valor, $\alpha = 0{,}4$, definido de forma heurística e mantido em todos os experimentos~\cite{brants2007large}. Os autores mostram que, com grandes volumes de dados de treinamento, a qualidade do método se aproxima da obtida com a suavização de Kneser-Ney~\cite{brants2007large}, que se tornou a referência padrão para modelos de n-gramas~\cite[cap.~3]{jurafsky2026slp}, e observam que a falta de normalização não prejudica a aplicação, porque esta depende apenas dos valores relativos das pontuações. O mesmo vale para o preenchimento automático, em que importa apenas a ordem das candidatas. Os resultados de Brants \textit{et al.}, porém, foram obtidos com bilhões de palavras de treinamento; para um \textit{corpus} pequeno como o deste trabalho, o desempenho precisa ser verificado experimentalmente, o que é feito no \refCap{4_Resultados}.
+
+A Tabela~\ref{tab:stupid_backoff} ilustra o método com o contexto ``eu quero beber'' no \textit{corpus} da Seção~\ref{sec:ngramas}. O trigrama ``quero beber'' aparece duas vezes, seguido uma vez por ``água'' e outra por ``café'', que recebem pontuação $1/2$. Para preencher uma terceira sugestão, o modelo recua para o bigrama ``beber'', que não oferece palavras novas, e em seguida para os unigramas, aplicando o fator $\alpha$ duas vezes: a palavra mais frequente do \textit{corpus}, ``a'', com 135 ocorrências, recebe $0{,}4^2 \times 135/2.695 \approx 0{,}008$. O exemplo mostra tanto a vantagem do método, que sempre produz candidatas, quanto sua limitação em um \textit{corpus} pequeno: quando o contexto é pouco conhecido, as últimas vagas são ocupadas pelas palavras mais frequentes, independentemente do contexto.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Pontuações do \textit{Stupid Backoff} (Equação~\ref{eq:stupid_backoff}, $\alpha = 0{,}4$) para as três primeiras sugestões após ``eu quero beber''.}
+    \label{tab:stupid_backoff}
+    \begin{tabular}{llc}
+        \hline
+        Palavra & Contexto utilizado & Pontuação $S$ \\
+        \hline
+        água & trigrama (``quero beber'') & $1/2 = 0{,}5$ \\
+        café & trigrama (``quero beber'') & $1/2 = 0{,}5$ \\
+        a & unigrama (após dois recuos) & $0{,}4^2 \times 135/2.695 \approx 0{,}008$ \\
+        \hline
+    \end{tabular}
+\end{table}
+
+% Fuzzy search e trie: fora por enquanto (decisão de 01/11/2026)
+% \subsection{Fuzzy Search (algoritmos de autocomplete)}
+% \subsection{Trie}
+
+\subsection{Métricas de Entrada de Texto} \label{sec:metricas}
+
+A medida de desempenho mais difundida na avaliação de entrada de texto é a velocidade em palavras por minuto (\textit{words per minute}, WPM). Por convenção, uma ``palavra'' corresponde a cinco caracteres, incluindo os espaços, e a velocidade é calculada como
+\begin{equation}
+    \mathrm{WPM} = \frac{|T| - 1}{S} \times 60 \times \frac{1}{5},
+    \label{eq:wpm}
+\end{equation}
+em que $|T|$ é o número de caracteres do texto final transcrito e $S$ é o tempo, em segundos, entre a entrada do primeiro e do último caractere; a subtração de uma unidade se deve ao fato de a contagem do tempo começar no primeiro caractere~\cite{wobbrock2007measures}. O WPM considera apenas o resultado e o tempo gasto, e não o número de ações realizadas para produzi-lo.
+
+O esforço é medido pelo número de toques por caractere (\textit{keystrokes per character}, KSPC), termo que tem dois significados distintos~\cite{wobbrock2007measures}. Como \textit{medida de desempenho}, o KSPC é a razão entre o tamanho da sequência de entrada $IS$, que inclui todas as ações do usuário, até mesmo as correções, e o tamanho do texto transcrito:
+\begin{equation}
+    \mathrm{KSPC} = \frac{|IS|}{|T|}.
+    \label{eq:kspc}
+\end{equation}
+Em um teclado convencional, o valor 1,0 corresponde a uma digitação perfeita, e valores menores são melhores~\cite{wobbrock2007measures}. Já como \textit{característica} de uma técnica, o KSPC expressa quantas ações ela exige, em média, para gerar cada caractere, e é calculado antes de qualquer teste com usuários, ponderando o custo de cada letra ou palavra pela sua frequência em um modelo de linguagem~\cite{mackenzie2002kspc}. Nesse sentido, o termo ``toque'' deve ser entendido de forma ampla, como qualquer ação de entrada~\cite{wobbrock2007measures}, e técnicas com predição de palavras podem apresentar KSPC inferior a 1~\cite{mackenzie2002kspc}. Comparar o KSPC de uma técnica com e sem predição fornece a economia de toques, isto é, a fração das ações poupadas pelas sugestões: no exemplo de MacKenzie~\cite{mackenzie2002kspc}, a palavra ``vegetable'' exige 9 toques sem predição; com ela, bastam 4 quando a sugestão é escolhida com uma caneta na tela e 6 quando é preciso navegar até ela com teclas, economias de cerca de 56\% e 33\%, respectivamente.
+
+Os erros são classificados por Soukoreff e MacKenzie~\cite{soukoreff2003metrics} em quatro grupos de toques: corretos ($C$); incorretos e não corrigidos ($INF$), que permanecem no texto final; incorretos mas corrigidos ($IF$); e os próprios toques de correção ($F$), como o de apagar. A partir dessa classificação, a taxa de erro total se divide em uma parcela de erros corrigidos e outra de erros não corrigidos:
+\begin{equation}
+    \underbrace{\frac{INF + IF}{C + INF + IF}}_{\text{taxa de erro total}} = \underbrace{\frac{IF}{C + INF + IF}}_{\text{erros corrigidos}} + \underbrace{\frac{INF}{C + INF + IF}}_{\text{erros não corrigidos}}.
+    \label{eq:taxas_erro}
+\end{equation}
+Os erros corrigidos refletem esforço desperdiçado, enquanto os não corrigidos comprometem a qualidade do texto. Identificar estes últimos exige conhecer o texto que o usuário pretendia escrever, o que só é possível em testes com frases-alvo~\cite{soukoreff2003metrics}.
+
+Por fim, a qualidade da predição pode ser avaliada diretamente pela acurácia entre as $k$ primeiras sugestões (\textit{top-$k$}), definida como a fração das palavras do texto que apareceram entre as $k$ primeiras candidatas antes de serem concluídas. A forma como essas métricas são registradas e calculadas no aplicativo é descrita no \refCap{3_Metodologia_e_Desenvolvimento}.
+
 \section{Text to Speech (TTS)}
     % Ideia básica dos modelos
     % Ideia do Kokoro
