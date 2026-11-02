@@ -19,15 +19,103 @@
   \subsection{Calibração e Inferência}
   \subsection{Filtro de Kalman}
 
-\section{Preenchimento automático de palavras}
-  \subsection{Dataset}
-  \subsection{N-GRAMA}
-  \subsection{Trie (trigramas)}
+% TEMPORÁRIO: as seções 3.1 a 3.5 ainda são só títulos, e o LaTeX não quebra a
+% página entre títulos seguidos, o que empurrava o texto para além da margem
+% inferior. Remover este \clearpage quando essas seções tiverem texto.
+\clearpage
+\section{Preenchimento automático de palavras} \label{sec:met_preenchimento}
+
+O preenchimento automático foi implementado como um módulo independente da interface, a classe \texttt{WordPredictor}, escrita em Dart sem dependência do Flutter. Isso permite que o mesmo código seja executado tanto no aplicativo quanto em ferramentas de linha de comando, como a usada na avaliação offline. O módulo recebe o texto digitado até o momento e devolve as três palavras mais prováveis segundo um modelo de trigramas com \textit{Stupid Backoff} (Seção~\ref{sec:suavizacao}), treinado em um \textit{corpus} de frases de \gls{CAA}. As subseções a seguir descrevem o \textit{corpus} (Seção~\ref{sec:met_corpus}), o tratamento do texto (Seção~\ref{sec:met_normalizacao}), a construção do modelo (Seção~\ref{sec:met_modelo}), a geração e a inserção das sugestões (Seção~\ref{sec:met_sugestoes}), a tolerância a erros de digitação (Seção~\ref{sec:met_tolerancia}) e o método de avaliação offline (Seção~\ref{sec:met_avaliacao}). Os resultados da avaliação são apresentados no \refCap{4_Resultados}.
+
+\subsection{\textit{Corpus}} \label{sec:met_corpus}
+
+Como um modelo de n-gramas reflete o gênero dos textos em que foi treinado (Seção~\ref{sec:limitacoes_ngramas}), o \textit{corpus} é formado apenas por frases da comunicação cotidiana de uma pessoa com limitação motora grave. São 565 frases, de duas origens:
+\begin{itemize}
+    \item 15 frases curtas escritas no início do desenvolvimento e mantidas no próprio código, como ``eu quero beber água'' e ``preciso de ajuda'';
+    \item 550 frases distribuídas em cinco arquivos JSON, incluídos no aplicativo como recursos (\textit{assets}), o que permite ampliar o \textit{corpus} sem alterar o código.
+\end{itemize}
+
+As 550 frases dos arquivos foram geradas com o auxílio de uma ferramenta de inteligência artificial generativa. % TODO: nome da ferramenta e se as frases foram revisadas manualmente
+Elas cobrem sintomas e desconfortos (``Estou com dor de cabeça'', ``Estou com falta de ar''), cuidados e posicionamento do corpo (``Mova o meu braço direito'', ``Ajuste a máscara de oxigênio''), controle do ambiente (``Abra a janela''), entretenimento (``Coloque um áudio para eu ouvir''), contato com outras pessoas (``Ligue para a minha sobrinha''), respostas curtas (``Sim'', ``Não'', ``Talvez'') e o controle da própria comunicação (``Terminei a frase'', ``Esquece o que eu disse''). No total, o \textit{corpus} soma 2.695 palavras, com média de 4,8 palavras por frase e vocabulário de 767 palavras distintas, e não contém frases repetidas.
+
+O uso de frases geradas é uma limitação deste trabalho: elas não foram produzidas por usuários de \gls{CAA}, e o vocabulário e a frequência das palavras refletem as escolhas do gerador, e não o uso real. Por isso, a avaliação offline (Seção~\ref{sec:met_avaliacao}) mede a capacidade do modelo de prever frases desse mesmo conjunto, e não necessariamente a comunicação de pessoas com \gls{ELA}, que só pode ser observada nos testes com usuários (\refCap{4_Resultados}).
+
+\subsection{Tratamento do Texto} \label{sec:met_normalizacao}
+
+O teclado do aplicativo tem apenas as 26 letras, sem acentos, e quatro teclas de ação (FALAR, ESPAÇO, APAGAR e LIMPAR), enquanto o \textit{corpus} é escrito com acentos e pontuação. Para que o texto digitado corresponda às palavras do \textit{corpus}, ambos passam pela mesma normalização: o texto é dividido em palavras nos sinais de pontuação, as palavras são convertidas para minúsculas, e os acentos, a cedilha e os hífens são removidos. Assim, ``ÁGUA'' e ``água'' tornam-se ``agua'', e ``ligue o ar-condicionado.'' torna-se a sequência ``ligue'', ``o'', ``arcondicionado''. As palavras com hífen são mantidas inteiras porque, sem uma tecla de hífen, o usuário não tem como digitar suas partes separadamente.
+
+A normalização não se perde na exibição: para cada palavra normalizada, o modelo guarda a grafia original mais frequente no \textit{corpus}. A sugestão é mostrada como ``água'' mesmo que o usuário tenha digitado ``AGU'' e, ao ser aceita, é inserida em maiúsculas, como o restante da mensagem, e com o acento (``ÁGUA'').
+
+\subsection{Modelo de Trigramas} \label{sec:met_modelo}
+
+O modelo é construído na inicialização do aplicativo a partir das frases do \textit{corpus}, sem arquivo de modelo pré-treinado. Cada frase normalizada recebe dois símbolos \texttt{<s>} no início (Seção~\ref{sec:ngramas}) e, para cada palavra, são incrementadas três tabelas de contagem: a da palavra após as duas anteriores (trigrama), após a anterior (bigrama) e sem contexto (unigrama), junto com o total de cada contexto. Essas tabelas fornecem diretamente os numeradores e denominadores da Equação~\ref{eq:mle_trigrama}. Diferentemente do usual~\cite[cap.~3]{jurafsky2026slp}, não é acrescentado o símbolo de fim de frase \texttt{</s>}, pois o fim da mensagem é indicado pelo próprio usuário, com a tecla FALAR, e nunca precisa ser sugerido.
+
+As candidatas são pontuadas pelo \textit{Stupid Backoff} (Equação~\ref{eq:stupid_backoff}) com $\alpha = 0{,}4$, o valor usado por Brants \textit{et al.}~\cite{brants2007large}. O modelo consulta primeiro o contexto de duas palavras e atribui a cada palavra observada sua frequência relativa; em seguida, consulta o contexto de uma palavra, pontuando apenas as palavras ainda não pontuadas e multiplicando o resultado por $\alpha$; por fim, recorre aos unigramas, com fator $\alpha^2$. Empates são desfeitos pela ordem alfabética, o que torna as sugestões determinísticas. Com um vocabulário de 767 palavras, as pontuações são recalculadas a cada tecla, sem armazenamento intermediário.
+
+A escolha de um modelo de n-gramas, e não de um modelo neural, segue a discussão da Seção~\ref{sec:limitacoes_ngramas}: o modelo é construído em memória a partir de um \textit{corpus} pequeno, funciona sem conexão com a internet e é executado no próprio \textit{tablet}. A ordem do modelo e o fator $\alpha$ são parâmetros do módulo e podem ser alterados sem mudanças no restante do código.
+
+\subsection{Trie (trigramas)}
+
+\subsection{Geração e Inserção das Sugestões} \label{sec:met_sugestoes}
+
+As três sugestões ficam em uma barra acima do teclado. A partir da primeira linha do teclado, o comando ``cima'' leva o foco à barra, os comandos ``esquerda'' e ``direita'' percorrem as sugestões e o comando de seleção insere a sugestão destacada. Cada sugestão a mais na lista exigiria mais comandos para ser alcançada, o que justifica uma lista curta (Seção~\ref{sec:preenchimento}). A forma de gerar as sugestões depende do texto digitado:
+\begin{itemize}
+    \item \textbf{Mensagem vazia ou terminada em espaço:} o modelo sugere a próxima palavra, usando como contexto as duas últimas palavras (ou os símbolos \texttt{<s>}). Com a mensagem vazia, por exemplo, as sugestões são ``estou'', ``coloque'' e ``me'', as palavras que mais iniciam frases no \textit{corpus}.
+    \item \textbf{Mensagem terminada no meio de uma palavra:} o modelo completa a palavra, considerando apenas as candidatas que começam pelas letras digitadas e pontuando-as com o contexto das palavras anteriores. Após ``ESTOU COM D'', as sugestões são ``dor'', ``dificuldade'' e ``de''.
+    \item \textbf{Caso ambíguo:} sem o espaço final, a última palavra digitada pode estar incompleta ou já ser uma palavra inteira. Após ``E'', o usuário pode estar começando ``estou'' ou ter digitado a conjunção ``e''.
+\end{itemize}
+
+No caso ambíguo, as duas leituras competem pela pontuação da sequência inteira. Sendo $h$ o histórico de palavras anteriores, $u$ a última palavra digitada, $c$ uma palavra que a completa e $n$ uma possível palavra seguinte, as pontuações são
+\begin{equation}
+    S_{\textrm{completar}}(c) = S(c \mid h) \qquad \textrm{e} \qquad S_{\textrm{próxima}}(n) = S(u \mid h)\,S(n \mid h\,u),
+    \label{eq:ambiguidade}
+\end{equation}
+e as três maiores, de qualquer das duas leituras, são exibidas. A leitura de $u$ como palavra inteira só é considerada se o contexto formado por $u$ e a palavra anterior (ou o símbolo \texttt{<s>}) tiver sido observado no \textit{corpus}. Após ``E'', as sugestões são ``estou'' e ``eu'', que completam a letra digitada, e ``a'', que viria depois da conjunção ``e''.
+
+Cada sugestão é devolvida com a indicação de qual das leituras a gerou, e uma única função do módulo, \texttt{accept}, a insere no texto: se a sugestão completa a palavra, ela substitui a parte digitada; caso contrário, é acrescentada depois dela. Em ambos os casos, a palavra é inserida em maiúsculas e seguida de um espaço, de modo que as próximas sugestões já sejam de próxima palavra. Assim, aceitar ``beber'' após ``EU QUERO B'' ou após ``EU QUERO'' produz o mesmo texto, ``EU QUERO BEBER''. Essa indicação precisa vir do modelo, porque o texto sozinho não distingue os casos: após ``E'', aceitar ``estou'' substitui a letra e produz ``ESTOU'', enquanto aceitar ``a'' a mantém e produz ``E A''. A mesma função é usada pela tela do aplicativo e pelo digitador simulado da avaliação offline.
+
+\subsection{Tolerância a Erros de Digitação} \label{sec:met_tolerancia}
+
+Na forma descrita até aqui, a completação exige que as letras digitadas sejam o início exato da palavra. Um único erro anula as sugestões: após ``EU QUERO BW'', digitado no lugar de ``EU QUERO BE'', nenhuma palavra do \textit{corpus} é compatível. Para corrigir o erro, o usuário precisa levar o foco até a tecla APAGAR, na última linha do teclado, e voltar às letras, e cada um desses passos é um comando dado com o olhar.
+
+Como o teclado é percorrido por setas, os erros esperados não são os de um teclado físico. O mais provável é a troca por uma tecla vizinha na grade, causada por uma seta a mais ou a menos ou por uma seleção disparada um passo antes ou depois. Também são possíveis a letra repetida, quando a seleção dispara duas vezes, e a letra omitida. A troca de posição entre duas letras, comum em teclados físicos, exigiria navegar de uma letra à outra e foi desconsiderada.
+
+Para comparar as letras digitadas com as palavras do vocabulário, foi usada a distância de edição mínima, definida como o menor número de operações de inserção, remoção e substituição necessárias para transformar uma sequência de caracteres em outra; na distância de Levenshtein, cada operação tem custo 1~\cite[cap.~2]{jurafsky2026slp}. A distância é calculada por programação dinâmica: sendo $D[i,j]$ a distância entre os $i$ primeiros caracteres da sequência de origem e os $j$ primeiros da de destino, cada célula da tabela é obtida a partir das três vizinhas já calculadas, e o algoritmo admite pesos arbitrários para as operações. Em corretores ortográficos, por exemplo, substituições entre letras vizinhas no teclado são mais prováveis~\cite[cap.~2]{jurafsky2026slp}.
+
+Neste trabalho, o método foi adaptado em dois pontos. Primeiro, como o usuário ainda está digitando, as letras digitadas $x$ não são comparadas com a palavra candidata $w$ inteira, mas com o seu início mais próximo:
+\begin{equation}
+    d(x, w) = \min_{0 \le j \le |w|} D(x,\, w_{1:j}),
+    \label{eq:distancia_prefixo}
+\end{equation}
+o que não exige cálculo adicional, pois a última linha da tabela de programação dinâmica já contém a distância até cada início $w_{1:j}$. Com $d = 0$, recai-se no caso exato. Segundo, os custos refletem o teclado: a substituição por uma tecla vizinha, a uma seta de distância na grade, custa 1, assim como a inserção e a remoção de uma letra, e a substituição por uma tecla distante custa 2. As vizinhas são obtidas pela mesma regra de navegação da tela; as da letra E, por exemplo, são W, R e D.
+
+São toleradas palavras com $d(x, w) \le 1$, ou seja, com no máximo um erro, e apenas a partir de três letras digitadas, já que, com uma ou duas, quase todas as palavras do vocabulário estariam a um erro de distância. A pontuação de uma candidata com erro é a do \textit{Stupid Backoff} multiplicada por um fator de penalidade $\beta$ elevado ao custo:
+\begin{equation}
+    S_{\textrm{erro}}(w) = S(w \mid h)\,\beta^{\,d(x, w)}, \qquad \beta = 0{,}01,
+    \label{eq:penalidade}
+\end{equation}
+de modo que uma candidata exata quase sempre fica à frente de uma com erro, e as candidatas com erro ocupam, na prática, as vagas que sobram na lista. Com esses parâmetros, após ``EU QUERO BWB'' o modelo sugere ``beber'', já que W é vizinha de E, e a função \texttt{accept} substitui a palavra parcial inteira, com o erro, produzindo ``EU QUERO BEBER''. O mínimo de três letras e o fator $\beta$ foram escolhidos por uma varredura de valores na avaliação offline, apresentada no \refCap{4_Resultados}.
+
+\subsection{Avaliação Offline} \label{sec:met_avaliacao}
+
+Para medir o preenchimento automático antes dos testes com usuários e comparar versões do modelo, foi construída uma avaliação offline, sem usuários, em que um digitador simulado escreve as frases do \textit{corpus}. O digitador segue as mesmas regras da tela do aplicativo:
+\begin{itemize}
+    \item o foco começa na primeira tecla, com a mensagem vazia, e a frase termina com a tecla FALAR;
+    \item a navegação é feita por setas e, como as linhas do teclado têm comprimentos diferentes, a coluna é limitada ao tamanho da linha de destino;
+    \item a barra de sugestões é alcançada com o comando ``cima'' a partir da primeira linha.
+\end{itemize}
+O digitador percorre sempre o menor caminho de setas entre duas teclas, obtido por busca em largura, e aceita uma sugestão assim que ela custa, em comandos, no máximo o mesmo que terminar a palavra letra a letra. Os eventos que ele gera passam pelo mesmo módulo de métricas das sessões reais (Seção~\ref{sec:met_metricas}), de modo que as métricas da simulação e dos testes com usuários têm definições idênticas. Como o digitador conhece a frase e, no cenário básico, não erra, os resultados representam um limite superior da economia possível, e não uma previsão do desempenho de uma pessoa. A velocidade em WPM é estimada supondo 1,5~s por comando, o tempo de permanência padrão do aplicativo, e não é uma medida.
+
+Para que o modelo nunca seja avaliado em uma frase que viu no treinamento, foi usada validação cruzada em 10 partes. As frases são deduplicadas pela forma normalizada, embaralhadas com uma semente fixa, para que o resultado seja reprodutível, e divididas em 10 partes; para cada parte, um modelo é treinado com as outras nove e o digitador escreve as frases da parte separada. Também é registrada a fração das palavras de teste ausentes do vocabulário de treino, que nenhuma sugestão pode acertar. Como referência, a mesma simulação é feita nas próprias frases de treino, o que mostra quanto o desempenho depende de o modelo já conhecer a frase.
+
+Para avaliar a tolerância a erros, o digitador tem também um modo com erros, em que cada letra é trocada, com probabilidade $p$, por uma letra vizinha na grade, sorteada com semente fixa. São simulados dois comportamentos: no primeiro, o digitador percebe o erro logo após cometê-lo; no segundo, continua a palavra e só o percebe ao terminá-la. Nos dois casos, a cada passo ele escolhe a opção que custa menos comandos: aceitar a sugestão correta, se ela aparecer, ou apagar até o erro e redigitar. O modo com erros simula apenas trocas por teclas vizinhas; letras repetidas e omitidas são toleradas pelo modelo, mas não simuladas.
+
+A avaliação é executada por uma ferramenta de linha de comando (\texttt{dart run tool/evaluate\_predictor.dart}), que imprime uma tabela com os cenários e pode salvar os resultados em JSON. Além dela, testes automatizados verificam a normalização, o \textit{backoff}, a geração e a inserção das sugestões e a tolerância a erros, e garantem que alterações no código não mudem o comportamento esperado.
 
 \section{Text to Speech}
   \subsection{Modelos}
 
 % TODO
-\section{Métricas}
+\section{Métricas} \label{sec:met_metricas}
 
 \section{Utilização de IA no Desenvolvimento}
