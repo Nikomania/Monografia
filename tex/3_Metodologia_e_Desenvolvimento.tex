@@ -5,10 +5,100 @@
     \subsection{Github e Controle de Versão}
         % \subsubsection{Branchs}
 
-\section{Arquitetura do Software}
-  \subsection{Módulos}
-  \subsection{Definição de Interface}
-  
+\section{Arquitetura do Software} \label{sec:arquitetura}
+
+O aplicativo foi desenvolvido com o \textit{framework} Flutter e segue a estrutura de diretórios padrão de projetos Dart voltados a dispositivos móveis~\cite{flutter_docs}. Essa organização separa a configuração nativa da plataforma, os recursos estáticos embarcados, as ferramentas auxiliares de linha de comando, os testes automatizados e o código-fonte da aplicação. Na raiz do repositório, os principais arquivos e diretórios cumprem os seguintes papéis:
+
+\begin{itemize}
+    \item \texttt{pubspec.yaml} e \texttt{analysis\_options.yaml}: arquivos de configuração do projeto. O \texttt{pubspec.yaml} declara as dependências externas --- \texttt{camera}, \texttt{google\_\allowbreak mlkit\_\allowbreak face\_\allowbreak mesh\_\allowbreak detection}, \texttt{tflite\_\allowbreak flutter}, \texttt{sherpa\_\allowbreak onnx}, \texttt{sherpa\_\allowbreak onnx\_\allowbreak android\_\allowbreak arm64}, \texttt{audioplayers} e \texttt{path\_\allowbreak provider} --- e lista os diretórios de recursos estáticos empacotados na compilação, enquanto o \texttt{analysis\_\allowbreak options.yaml} ativa as regras de verificação estática do pacote \texttt{flutter\_lints}.
+    \item \texttt{android/}: projeto nativo Android gerenciado pelo Gradle, que hospeda o motor do Flutter em uma \texttt{Activity} (Seção~\ref{sec:android}), define a compilação para a arquitetura \texttt{arm64-v8a} e declara no manifesto (\texttt{AndroidManifest.xml}) a permissão de uso da câmera frontal (\texttt{android.\allowbreak permission.\allowbreak CAMERA}).
+    \item \texttt{assets/}: recursos estáticos incluídos no pacote de instalação (\texttt{APK}) para permitir o funcionamento sem conexão com a internet. Divide-se em \texttt{assets/phrases/}, com os cinco arquivos JSON do \textit{corpus} de frases de \gls{CAA} (Seção~\ref{sec:met_corpus}), e \texttt{assets/models/}, que armazena o modelo de detecção de pupila (\texttt{pupil\_128.tflite}), os parâmetros geométricos do recorte ocular (\texttt{crop\_params.json}) e o diretório \texttt{kokoro\_pt/} com o modelo de síntese de voz (\texttt{model.onnx}), a tabela de vozes (\texttt{voices.bin}), o vocabulário fonético (\texttt{tokens.txt}), o manifesto de integridade (\texttt{manifest.json}) e os dados fonéticos do \texttt{espeak-ng} para o português brasileiro.
+    \item \texttt{tool/}: ferramentas executadas na máquina de desenvolvimento, fora do aplicativo. Contém o \textit{script} \texttt{fetch\_kokoro\_model.py}, que baixa o pacote de voz (cerca de 355~MB, mantido fora do controle de versão), extrai os arquivos necessários ao português brasileiro e confere o tamanho e o resumo SHA-256 de cada arquivo; o programa \texttt{evaluate\_predictor.dart}, que executa a avaliação offline do preenchimento automático (Seção~\ref{sec:met_avaliacao}); e o \textit{script} \texttt{render\_facemesh.py}, usado para gerar figuras da malha facial.
+    \item \texttt{test/}: suíte de testes automatizados de unidade e de interface, executada com \texttt{flutter test}. Os testes cobrem a geometria do recorte ocular, a leitura de quadros \texttt{NV21}, o cálculo de rotação da câmera, o ajuste polinomial da calibração, a predição de palavras, o cálculo das métricas e o controle de estado do sintetizador de voz, permitindo verificar a lógica dos módulos sem depender do \textit{tablet} a cada alteração.
+    \item \texttt{lib/}: diretório que reúne todo o código-fonte em Dart do aplicativo.
+\end{itemize}
+
+Dentro de \texttt{lib/}, o código foi dividido em módulos para separar a interface gráfica, as regras de navegação e predição de texto, o registro de métricas, a síntese de voz e o rastreamento ocular. A partir do ponto de entrada \texttt{main.dart}, que inicializa o aplicativo \texttt{ElaCommunicatorApp} e abre a tela principal, a arquitetura organiza-se na camada de telas (\texttt{screens/}) e em cinco pacotes internos (\texttt{widgets/}, \texttt{models/}, \texttt{metrics/}, \texttt{tts/} e \texttt{gaze/}), representados na \refFig{fig:modulos}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{modulos}
+    \caption{Diagrama de módulos do diretório \texttt{lib/} e suas dependências com pacotes e recursos externos.}
+    \label{fig:modulos}
+\end{figure}
+
+  \subsection{Módulos} \label{sec:modulos}
+
+Como mostra a \refFig{fig:modulos}, a tela principal (\texttt{CommunicatorScreen}) concentra a coordenação entre os módulos, enquanto o acesso à câmera, a inferência dos modelos e a gravação de arquivos permanecem encapsulados em seus respectivos pacotes. As subseções a seguir descrevem a responsabilidade de cada módulo e das classes que o compõem.
+
+  \subsubsection{Ponto de Entrada e Telas (\texttt{main.dart} e \texttt{screens/})}
+
+O ponto de entrada e as duas telas da aplicação controlam o estado geral da sessão e integram os demais módulos:
+
+\begin{itemize}
+    \item \texttt{ElaCommunicatorApp}: \textit{widget} raiz definido em \texttt{main.dart}, que configura o componente \texttt{MaterialApp} com tema escuro de alto contraste (Material~3) e abre a \texttt{CommunicatorScreen} como tela inicial.
+    \item \texttt{CommunicatorScreen}: tela principal do comunicador. Mantém o texto da mensagem em composição, a linha e a coluna atualmente selecionadas no teclado, o índice da sugestão destacada na barra superior e o estado do rastreador ocular e do sintetizador de voz. Toda ação de navegação ou seleção chega ao método \texttt{\_handleCommand} na forma de um \texttt{GazeCommand}, acompanhado da origem do comando (olhar ou toque). Para facilitar os testes de interface, a tela recebe opcionalmente por injeção de dependência instâncias de \texttt{SpeechSynthesizer}, \texttt{WordPredictor} e \texttt{Typing\allowbreak Metrics\allowbreak Recorder}, criando as implementações padrão quando executada normalmente no aparelho.
+    \item \texttt{CalibrationScreen}: tela aberta a partir do botão de status do rastreador na \texttt{CommunicatorScreen} para calibrar o olhar do usuário. Apresenta uma sequência de alvos na tela, recolhe os vetores pupila--canto calculados pelo \texttt{GazeTracker} em cada posição, ajusta os coeficientes da regressão polinomial com descarte de pontos discrepantes e devolve à tela principal o mapeamento resultante (\texttt{GazeMap}).
+\end{itemize}
+
+  \subsubsection{Componentes da Interface Visual (\texttt{widgets/})}
+
+O pacote \texttt{widgets/} contém os componentes visuais da interface, que recebem o estado atual por parâmetros e notificam eventos à tela principal:
+
+\begin{itemize}
+    \item \texttt{OnScreenKeyboard}: desenha o teclado virtual QWERTY com uma única tecla destacada por vez, correspondente à linha e à coluna selecionadas, e atualiza o rótulo e a disponibilidade da tecla FALAR conforme o estado da síntese de voz.
+    \item \texttt{MessageBar}: faixa superior que exibe a mensagem em composição e, quando há texto digitado, mostra logo abaixo a lista horizontal de sugestões de palavras, destacando aquela que estiver selecionada pelo foco de navegação.
+    \item \texttt{EdgeControls}: dispõe as quatro setas direcionais (cima, baixo, esquerda e direita) ao longo das bordas da tela, emoldurando a área central do teclado para maximizar a separação angular entre os alvos de olhar.
+    \item \texttt{DirectionPad}: dispõe as quatro setas e o botão de confirmação em uma grade compacta de $3 \times 3$ em formato de cruz, posicionada ao lado ou acima do teclado.
+    \item \texttt{GazeButton}: botão compartilhado pelos arranjos \texttt{EdgeControls} e \texttt{DirectionPad}, com estilo visual diferenciado para setas de direção e para a ação de confirmação e realce visual quando o olhar aponta para sua direção. O uso do mesmo componente nos dois arranjos garante que a comparação entre eles avalie apenas a diferença geométrica.
+    \item \texttt{CameraView}: inicializa a câmera frontal em resolução 480p com formato de imagem \texttt{NV21}, exibe uma prévia compacta no cabeçalho para auxiliar o enquadramento do rosto e entrega o \texttt{CameraController} ao rastreador ocular. Também observa o ciclo de vida do aplicativo (\texttt{WidgetsBindingObserver}) para liberar a câmera em segundo plano e reabri-la ao retornar.
+\end{itemize}
+
+  \subsubsection{Modelos e Regras da Interface (\texttt{models/})}
+
+O pacote \texttt{models/} reúne as definições de dados, a geometria de navegação do teclado e o modelo de preenchimento automático, implementados em Dart puro sem dependência de pacotes nativos:
+
+\begin{itemize}
+    \item \texttt{GazeCommand}: enumeração com os cinco comandos que controlam a interface (\texttt{up}, \texttt{down}, \texttt{left}, \texttt{right} e \texttt{select}). Funciona como contrato único de entrada: os botões na tela, o rastreador ocular e o digitador simulado produzem os mesmos comandos, de modo que a interface não depende da forma como o comando foi gerado.
+    \item \texttt{ControlStyle}: enumeração que seleciona entre o arranjo de setas nas bordas da tela (\texttt{edges}) e o arranjo em cruz (\texttt{cross}).
+    \item \texttt{KeyboardLayout} e \texttt{KeyDef}: definem a grade do teclado (\texttt{kKeyboardRows}), composta pelas três linhas das 26 letras do padrão QWERTY e por uma quarta linha com as quatro teclas de ação (FALAR, ESPAÇO, APAGAR e LIMPAR), dimensionadas por pesos proporcionais (\texttt{flex}).
+    \item \texttt{KeyboardNavigation}: implementa as regras de movimentação do foco sobre a grade do teclado, limitando o índice da coluna ao comprimento da linha de destino quando o foco muda de linha. Fornece a localização de qualquer tecla (\texttt{find}), o conjunto de teclas vizinhas a um comando de distância (\texttt{neighbors}) e o caminho mínimo de comandos entre duas teclas por busca em largura (\texttt{path}), sendo compartilhada pela tolerância a erros de digitação, pelo digitador simulado e pelo cálculo da linha de base nas métricas.
+    \item \texttt{WordPredictor}: motor de preenchimento automático de palavras baseado em trigramas com suavização \textit{Stupid Backoff} e tolerância a erros de digitação. Carrega o \textit{corpus} de frases de \texttt{assets/phrases/}, sugere até três palavras que completam o prefixo em digitação ou antecipam a próxima palavra (\texttt{suggest} e \texttt{predict}) e insere a sugestão escolhida na mensagem (\texttt{accept}). Seu funcionamento completo é detalhado na Seção~\ref{sec:met_preenchimento}.
+\end{itemize}
+
+  \subsubsection{Rastreamento Ocular (\texttt{gaze/})}
+
+O pacote \texttt{gaze/} implementa o pipeline de estimativa do olhar e emissão de comandos por tempo de permanência fundamentado nas Seções~\ref{sec:eyetracking} a~\ref{sec:kalman}:
+
+\begin{itemize}
+    \item \texttt{GazeTracker}: coordena o processamento a cada quadro recebido do fluxo da câmera (\texttt{startImageStream}), descartando novos quadros enquanto o anterior ainda está em execução para evitar atraso acumulado. Aciona periodicamente o detector de malha facial do ML Kit, suaviza a posição dos cantos dos olhos pela mediana das últimas leituras, comanda o recorte e a detecção da pupila nos dois olhos, calcula o vetor pupila--canto médio, aplica a regressão calibrada e o filtro de Kalman e converte o ponto estimado no comando da região correspondente quando o tempo de permanência (\textit{dwell}) se completa. Expõe os fluxos \texttt{samples} (estado quadro a quadro) e \texttt{commands} (comandos confirmados).
+    \item \texttt{CropParams} e \texttt{CropTransform}: calculam a transformação afim direta e inversa que alinha horizontalmente os cantos do olho e extrai o recorte quadrado de $128 \times 128$ pixels, utilizando exatamente os mesmos parâmetros geométricos do treinamento lidos de \texttt{crop\_params.json} e convertendo o centro detectado da pupila de volta para as coordenadas do quadro.
+    \item \texttt{Nv21Frame}: opera diretamente sobre o \textit{buffer} bruto \texttt{NV21} da câmera. Converte as coordenadas dos pontos do ML Kit do espaço orientado em pé para o espaço bruto do sensor (\texttt{toRaw}, a partir da rotação calculada por \texttt{rotationDegreesFor}) e amostra os pixels do recorte ocular aplicando a transformação afim inversa e a conversão de cores YUV para RGB normalizado diretamente no \textit{buffer} de entrada do detector (\texttt{sampleCrop}), sem converter o quadro inteiro.
+    \item \texttt{PupilDetector}: executa o modelo \texttt{YOLO26n} exportado para o formato LiteRT (\texttt{pupil\_\allowbreak 128.tflite}) por meio do pacote \texttt{tflite\_flutter}. Lê e escreve diretamente em \textit{buffers} planos tipados (\texttt{Float32List}) para evitar o custo de conversão de listas em Dart e devolve o centro da caixa delimitadora de maior confiança em cada olho.
+    \item \texttt{GazeMap}: calcula o vetor pupila--canto normalizado (Equação~\ref{eq:vetor_pupila_canto}), ajusta os coeficientes do polinômio de segunda ordem (Equação~\ref{eq:regressao_polinomial}) por mínimos quadrados com regularização \textit{ridge} resolvidos por eliminação de Gauss (\texttt{fitGazeMap}), descarta até dois alvos discrepantes na calibração (\texttt{fitGazeMapRobust}) e traduz o ponto estimado na tela em um \texttt{GazeCommand} conforme as faixas de borda (\texttt{GazeBands} e \texttt{commandFor}).
+    \item \texttt{GazeKalman}: aplica dois filtros de Kalman unidimensionais independentes, um para cada eixo da tela, segundo o modelo de velocidade constante da Equação~\ref{eq:kalman_matrizes}, utilizando o intervalo de tempo real $\Delta t$ entre quadros consecutivos para suavizar o ponto antes da verificação de permanência.
+\end{itemize}
+
+  \subsubsection{Síntese de Voz (\texttt{tts/})}
+
+O pacote \texttt{tts/} isola a geração de fala offline descrita na Seção~\ref{sec:tts} por trás de uma interface comum:
+
+\begin{itemize}
+    \item \texttt{SpeechSynthesizer} e \texttt{SpeechSynthesizerState}: definem a interface abstrata do sintetizador (\texttt{initialize}, \texttt{speak}, \texttt{stop}, \texttt{dispose} e o estado observável \texttt{state}) e a exceção \texttt{SpeechSynthesisException}. Como a \texttt{CommunicatorScreen} depende apenas dessa abstração, os testes automatizados podem substituir o sintetizador real por uma implementação simulada em memória, sem carregar o modelo nem os \textit{plugins} nativos.
+    \item \texttt{KokoroSynthesizer}: implementação que executa o modelo Kokoro (voz \texttt{pf\_dora}) com o pacote \texttt{sherpa\_onnx}. Copia os arquivos do modelo dos \textit{assets} para o diretório local do aplicativo na primeira execução (validando-os pelo \texttt{manifest.json}), mantém o sintetizador nativo em uma \textit{isolate} dedicada para não bloquear a interface nem o rastreamento ocular durante a geração do áudio, grava o resultado em um arquivo \texttt{WAV} temporário reproduzido via \texttt{audioplayers} e impede a sobreposição de falas simultâneas.
+\end{itemize}
+
+  \subsubsection{Registro de Métricas e Avaliação (\texttt{metrics/})}
+
+O pacote \texttt{metrics/} concentra o registro das sessões de uso e o cálculo das métricas de avaliação fundamentadas na Seção~\ref{sec:metricas} e detalhadas na Seção~\ref{sec:met_metricas}:
+
+\begin{itemize}
+    \item \texttt{TypingEvent}: representa cada evento bruto ocorrido durante a digitação --- comando emitido (com indicação de origem pelo olhar ou por toque), tecla acionada, lista de sugestões exibida ou sugestão aceita --- marcado com o tempo decorrido desde o início da sessão e serializável em JSON.
+    \item \texttt{TypingMetricsRecorder}: registra os eventos em tempo real durante o uso da \texttt{CommunicatorScreen} e salva o arquivo JSON da sessão no armazenamento do dispositivo a cada frase falada e ao encerrar a tela, incluindo tanto a sequência bruta de eventos quanto as métricas consolidadas.
+    \item \texttt{TypingMetrics}, \texttt{PhraseMetrics} e \texttt{TypingCounts}: reconstroem, a partir da lista de \texttt{TypingEvent}, as frases delimitadas pelo acionamento da tecla FALAR e calculam para cada frase e para o conjunto da sessão as medidas de velocidade (WPM e tempo por comando), esforço (KSPC e economia de comandos em relação à digitação sem preenchimento automático), erros corrigidos e desempenho das sugestões (Seção~\ref{sec:met_metricas}).
+    \item \texttt{SimulatedTypist}: simula a digitação das frases do \textit{corpus} seguindo as mesmas regras de navegação e aceitação de sugestões da tela principal, com suporte à validação cruzada (\texttt{crossValidate}), à avaliação nas frases de treino (\texttt{evaluateInSample}) e à injeção de erros de digitação, conforme descrito na Seção~\ref{sec:met_avaliacao}.
+\end{itemize}
+
 \section{Interface Visual}
 
 \section{Eye-Tracking}
@@ -110,7 +200,7 @@ Para que o modelo nunca seja avaliado em uma frase que viu no treinamento, foi u
 
 Para avaliar a tolerância a erros, o digitador tem também um modo com erros, em que cada letra é trocada, com probabilidade $p$, por uma letra vizinha na grade, sorteada com semente fixa. São simulados dois comportamentos: no primeiro, o digitador percebe o erro logo após cometê-lo; no segundo, continua a palavra e só o percebe ao terminá-la. Nos dois casos, a cada passo ele escolhe a opção que custa menos comandos: aceitar a sugestão correta, se ela aparecer, ou apagar até o erro e redigitar. O modo com erros simula apenas trocas por teclas vizinhas; letras repetidas e omitidas são toleradas pelo modelo, mas não simuladas.
 
-A avaliação é executada por uma ferramenta de linha de comando (\texttt{dart run tool/evaluate\_predictor.dart}), que imprime uma tabela com os cenários e pode salvar os resultados em JSON. Além dela, testes automatizados verificam a normalização, o \textit{backoff}, a geração e a inserção das sugestões e a tolerância a erros, e garantem que alterações no código não mudem o comportamento esperado.
+A avaliação é executada por uma ferramenta de linha de comando (\texttt{dart run tool/\allowbreak evaluate\_\allowbreak predictor.dart}), que imprime uma tabela com os cenários e pode salvar os resultados em JSON. Além dela, testes automatizados verificam a normalização, o \textit{backoff}, a geração e a inserção das sugestões e a tolerância a erros, e garantem que alterações no código não mudem o comportamento esperado.
 
 \section{Text to Speech}
   \subsection{Modelos}
