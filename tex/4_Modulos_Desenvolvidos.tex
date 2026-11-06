@@ -15,9 +15,23 @@ O ponto de entrada e as duas telas da aplicação controlam o estado geral da se
 
 \begin{itemize}
     \item \texttt{ElaCommunicatorApp}: \textit{widget} raiz definido em \texttt{main.dart}, que configura o componente \texttt{MaterialApp} com tema escuro de alto contraste (Material~3) e abre a \texttt{CommunicatorScreen} como tela inicial.
-    \item \texttt{CommunicatorScreen}: tela principal do comunicador. Mantém o texto da mensagem em composição, a linha e a coluna atualmente selecionadas no teclado, o índice da sugestão destacada na barra superior e o estado do rastreador ocular e do sintetizador de voz. Toda ação de navegação ou seleção chega ao método \texttt{\_handleCommand} na forma de um \texttt{GazeCommand}, acompanhado da origem do comando (olhar ou toque). Para facilitar os testes de interface, a tela recebe opcionalmente por injeção de dependência instâncias de \texttt{SpeechSynthesizer}, \texttt{WordPredictor} e \texttt{Typing\allowbreak Metrics\allowbreak Recorder}, criando as implementações padrão quando executada normalmente no aparelho.
-    \item \texttt{CalibrationScreen}: tela aberta a partir do botão de status do rastreador na \texttt{CommunicatorScreen} para calibrar o olhar do usuário. Apresenta uma sequência de alvos na tela, recolhe os vetores pupila--canto calculados pelo \texttt{GazeTracker} em cada posição, ajusta os coeficientes da regressão polinomial com descarte de pontos discrepantes e devolve à tela principal o mapeamento resultante (\texttt{GazeMap}).
+    \item \texttt{CommunicatorScreen}: tela principal do comunicador (\refFig{fig:tela_teclado}). Mantém o texto da mensagem em composição, a linha e a coluna atualmente selecionadas no teclado, o índice da sugestão destacada na barra superior e o estado do rastreador ocular e do sintetizador de voz. Toda ação de navegação ou seleção chega ao método \texttt{\_handleCommand} na forma de um \texttt{GazeCommand}, acompanhado da origem do comando (olhar ou toque). Para facilitar os testes de interface, a tela recebe opcionalmente por injeção de dependência instâncias de \texttt{SpeechSynthesizer}, \texttt{Word\allowbreak Predictor} e \texttt{Typing\allowbreak Metrics\allowbreak Recorder}, criando as implementações padrão quando executada normalmente no aparelho.
+    \item \texttt{CalibrationScreen}: tela aberta a partir do botão de status do rastreador na \texttt{CommunicatorScreen} para calibrar o olhar do usuário (\refFig{fig:tela_calibragem}). Apresenta uma sequência de alvos na tela, recolhe os vetores pupila--canto calculados pelo \texttt{GazeTracker} em cada posição, ajusta os coeficientes da regressão polinomial com descarte de pontos discrepantes e devolve à tela principal o mapeamento resultante (\texttt{GazeMap}).
 \end{itemize}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.78\textwidth]{tela_teclado.jpeg}
+    \caption{Tela principal do comunicador (\texttt{CommunicatorScreen}) no arranjo de bordas, com a barra de mensagem e sugestões, o botão de status do rastreador, a prévia da câmera frontal, o teclado virtual QWERTY, o botão de confirmação, as setas direcionais nas bordas e o indicador circular do ponto estimado do olhar.}
+    \label{fig:tela_teclado}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.78\textwidth]{tela_calibragem.jpeg}
+    \caption{Tela de calibração (\texttt{CalibrationScreen}) durante a coleta de amostras, exibindo o alvo ativo com anel de progresso, a contagem de alvos na parte inferior e o círculo ciano correspondente à estimativa atual do olhar.}
+    \label{fig:tela_calibragem}
+\end{figure}
 
   \section{Componentes da Interface Visual (\texttt{widgets/})}
 
