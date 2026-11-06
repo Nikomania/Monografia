@@ -1,5 +1,3 @@
-\section{Módulos Desenvolvidos} \label{sec:modulos_desenvolvidos}
-
 Dentro de \texttt{lib/}, o código foi dividido em módulos para separar a interface gráfica, as regras de navegação e predição de texto, o registro de métricas, a síntese de voz e o rastreamento ocular. A partir do ponto de entrada \texttt{main.dart}, que inicializa o aplicativo \texttt{ElaCommunicatorApp} e abre a tela principal, a arquitetura organiza-se na camada de telas (\texttt{screens/}) e em cinco pacotes internos (\texttt{widgets/}, \texttt{models/}, \texttt{metrics/}, \texttt{tts/} e \texttt{gaze/}), representados na \refFig{fig:modulos}.
 
 \begin{figure}[htbp]
@@ -9,10 +7,9 @@ Dentro de \texttt{lib/}, o código foi dividido em módulos para separar a inter
     \label{fig:modulos}
 \end{figure}
 
-Como mostra a \refFig{fig:modulos}, a tela principal (\texttt{CommunicatorScreen}) concentra a coordenação entre os módulos, enquanto o acesso à câmera, a inferência dos modelos e a gravação de arquivos permanecem encapsulados em seus respectivos pacotes. As subseções a seguir descrevem a responsabilidade de cada módulo e das classes que o compõem.
+Como mostra a \refFig{fig:modulos}, a tela principal (\texttt{CommunicatorScreen}) concentra a coordenação entre os módulos, enquanto o acesso à câmera, a inferência dos modelos e a gravação de arquivos permanecem encapsulados em seus respectivos pacotes. As seções a seguir descrevem a responsabilidade de cada módulo e das classes que o compõem.
 
-
-\subsection{Ponto de Entrada e Telas (\texttt{main.dart} e \texttt{screens/})}
+\section{Ponto de Entrada e Telas (\texttt{main.dart} e \texttt{screens/})}
 
 O ponto de entrada e as duas telas da aplicação controlam o estado geral da sessão e integram os demais módulos:
 
@@ -22,7 +19,7 @@ O ponto de entrada e as duas telas da aplicação controlam o estado geral da se
     \item \texttt{CalibrationScreen}: tela aberta a partir do botão de status do rastreador na \texttt{CommunicatorScreen} para calibrar o olhar do usuário. Apresenta uma sequência de alvos na tela, recolhe os vetores pupila--canto calculados pelo \texttt{GazeTracker} em cada posição, ajusta os coeficientes da regressão polinomial com descarte de pontos discrepantes e devolve à tela principal o mapeamento resultante (\texttt{GazeMap}).
 \end{itemize}
 
-  \subsection{Componentes da Interface Visual (\texttt{widgets/})}
+  \section{Componentes da Interface Visual (\texttt{widgets/})}
 
 O pacote \texttt{widgets/} contém os componentes visuais da interface, que recebem o estado atual por parâmetros e notificam eventos à tela principal:
 
@@ -35,21 +32,26 @@ O pacote \texttt{widgets/} contém os componentes visuais da interface, que rece
     \item \texttt{CameraView}: inicializa a câmera frontal em resolução 480p com formato de imagem \texttt{NV21}, exibe uma prévia compacta no cabeçalho para auxiliar o enquadramento do rosto e entrega o \texttt{CameraController} ao rastreador ocular. Também observa o ciclo de vida do aplicativo (\texttt{WidgetsBindingObserver}) para liberar a câmera em segundo plano e reabri-la ao retornar.
 \end{itemize}
 
-  \subsection{Modelos e Regras da Interface (\texttt{models/})}
+  \section{Modelos e Regras da Interface (\texttt{models/})}
 
 O pacote \texttt{models/} reúne as definições de dados, a geometria de navegação do teclado e o modelo de preenchimento automático, implementados em Dart puro sem dependência de pacotes nativos:
 
-    \subsubsection{\texttt{GazeCommand}: enumeração com os cinco comandos que controlam a interface (\texttt{up}, \texttt{down}, \texttt{left}, \texttt{right} e \texttt{select}). Funciona como contrato único de entrada: os botões na tela, o rastreador ocular e o digitador simulado produzem os mesmos comandos, de modo que a interface não depende da forma como o comando foi gerado.}
-    \subsubsection{\texttt{ControlStyle}: enumeração que seleciona entre o arranjo de setas nas bordas da tela (\texttt{edges}) e o arranjo em cruz (\texttt{cross}).}
-    \subsubsection{\texttt{KeyboardLayout} e \texttt{KeyDef}: definem a grade do teclado (\texttt{kKeyboardRows}), composta pelas três linhas das 26 letras do padrão QWERTY e por uma quarta linha com as quatro teclas de ação (FALAR, ESPAÇO, APAGAR e LIMPAR), dimensionadas por pesos proporcionais (\texttt{flex}).}
-    \subsubsection{\texttt{KeyboardNavigation}: implementa as regras de movimentação do foco sobre a grade do teclado, limitando o índice da coluna ao comprimento da linha de destino quando o foco muda de linha. Fornece a localização de qualquer tecla (\texttt{find}), o conjunto de teclas vizinhas a um comando de distância (\texttt{neighbors}) e o caminho mínimo de comandos entre duas teclas por busca em largura (\texttt{path}), sendo compartilhada pela tolerância a erros de digitação, pelo digitador simulado e pelo cálculo da linha de base nas métricas.}
-    \subsubsection{\texttt{WordPredictor}: motor de preenchimento automático de palavras baseado em trigramas com suavização \textit{Stupid Backoff} e tolerância a erros de digitação. Carrega o \textit{corpus} de frases de \texttt{assets/phrases/}, sugere até três palavras que completam o prefixo em digitação ou antecipam a próxima palavra (\texttt{suggest} e \texttt{predict}) e insere a sugestão escolhida na mensagem (\texttt{accept}). Seu funcionamento completo é detalhado na Seção~\ref{sec:met_preenchimento}.}
+\begin{itemize}
+    \item \texttt{GazeCommand}
+    enumeração com os cinco comandos que controlam a interface (\texttt{up}, \texttt{down}, \texttt{left}, \texttt{right} e \texttt{select}). Funciona como contrato único de entrada: os botões na tela, o rastreador ocular e o digitador simulado produzem os mesmos comandos, de modo que a interface não depende da forma como o comando foi gerado.
+    \item \texttt{ControlStyle}
+    enumeração que seleciona entre o arranjo de setas nas bordas da tela (\texttt{edges}) e o arranjo em cruz (\texttt{cross}).
+    \item \texttt{KeyboardLayout} e \texttt{KeyDef}
+    definem a grade do teclado (\texttt{kKeyboardRows}), composta pelas três linhas das 26 letras do padrão QWERTY e por uma quarta linha com as quatro teclas de ação (FALAR, ESPAÇO, APAGAR e LIMPAR), dimensionadas por pesos proporcionais (\texttt{flex}).
+    \item \texttt{KeyboardNavigation}
+    implementa as regras de movimentação do foco sobre a grade do teclado, limitando o índice da coluna ao comprimento da linha de destino quando o foco muda de linha. Fornece a localização de qualquer tecla (\texttt{find}), o conjunto de teclas vizinhas a um comando de distância (\texttt{neighbors}) e o caminho mínimo de comandos entre duas teclas por busca em largura (\texttt{path}), sendo compartilhada pela tolerância a erros de digitação, pelo digitador simulado e pelo cálculo da linha de base nas métricas.
+    \item \texttt{WordPredictor}
+    motor de preenchimento automático de palavras baseado em trigramas com suavização \textit{Stupid Backoff} e tolerância a erros de digitação. Carrega o \textit{corpus} de frases de \texttt{assets/phrases/}, sugere até três palavras que completam o prefixo em digitação ou antecipam a próxima palavra (\texttt{suggest} e \texttt{predict}) e insere a sugestão escolhida na mensagem (\texttt{accept}). Seu funcionamento completo é detalhado na Seção~\ref{sec:met_preenchimento}.
+\end{itemize}
+\section{Preenchimento automático de palavras} \label{sec:met_preenchimento}
+Presente em \texttt{models/word\_predictor.dart}, o preenchimento automático foi implementado como um módulo independente da interface, a classe \texttt{WordPredictor}, escrita em Dart sem dependência do Flutter. Isso permite que o mesmo código seja executado tanto no aplicativo quanto em ferramentas de linha de comando, como a usada na avaliação offline. O módulo recebe o texto digitado até o momento e devolve as três palavras mais prováveis segundo um modelo de trigramas com \textit{Stupid Backoff} (Seção~\ref{sec:suavizacao}), treinado em um \textit{corpus} de frases de \gls{CAA}. As subseções a seguir descrevem o \textit{corpus} (Seção~\ref{sec:met_corpus}), o tratamento do texto (Seção~\ref{sec:met_normalizacao}), a construção do modelo (Seção~\ref{sec:met_modelo}), a geração e a inserção das sugestões (Seção~\ref{sec:met_sugestoes}), a tolerância a erros de digitação (Seção~\ref{sec:met_tolerancia}) e o método de avaliação offline (Seção~\ref{sec:met_avaliacao}). Os resultados da avaliação são apresentados no \refCap{5_Resultados}.
 
-\subsection{Preenchimento automático de palavras (\texttt{models/word\_predictor.dart})} \label{sec:met_preenchimento}
-
-O preenchimento automático foi implementado como um módulo independente da interface, a classe \texttt{WordPredictor}, escrita em Dart sem dependência do Flutter. Isso permite que o mesmo código seja executado tanto no aplicativo quanto em ferramentas de linha de comando, como a usada na avaliação offline. O módulo recebe o texto digitado até o momento e devolve as três palavras mais prováveis segundo um modelo de trigramas com \textit{Stupid Backoff} (Seção~\ref{sec:suavizacao}), treinado em um \textit{corpus} de frases de \gls{CAA}. As subseções a seguir descrevem o \textit{corpus} (Seção~\ref{sec:met_corpus}), o tratamento do texto (Seção~\ref{sec:met_normalizacao}), a construção do modelo (Seção~\ref{sec:met_modelo}), a geração e a inserção das sugestões (Seção~\ref{sec:met_sugestoes}), a tolerância a erros de digitação (Seção~\ref{sec:met_tolerancia}) e o método de avaliação offline (Seção~\ref{sec:met_avaliacao}). Os resultados da avaliação são apresentados no \refCap{5_Resultados}.
-
-\subsubsection{\textit{Corpus}} \label{sec:met_corpus}
+\subsection{\textit{Corpus}} \label{sec:met_corpus}
 
 Como um modelo de n-gramas reflete o gênero dos textos em que foi treinado (Seção~\ref{sec:limitacoes_ngramas}), o \textit{corpus} é formado apenas por frases da comunicação cotidiana de uma pessoa com limitação motora grave. São 565 frases, de duas origens:
 \begin{itemize}
@@ -62,13 +64,13 @@ Elas cobrem sintomas e desconfortos (``Estou com dor de cabeça'', ``Estou com f
 
 O uso de frases geradas é uma limitação deste trabalho: elas não foram produzidas por usuários de \gls{CAA}, e o vocabulário e a frequência das palavras refletem as escolhas do gerador, e não o uso real. Por isso, a avaliação offline (Seção~\ref{sec:met_avaliacao}) mede a capacidade do modelo de prever frases desse mesmo conjunto, e não necessariamente a comunicação de pessoas com \gls{ELA}, que só pode ser observada nos testes com usuários (\refCap{5_Resultados}).
 
-\subsubsection{Tratamento do Texto} \label{sec:met_normalizacao}
+\subsection{Tratamento do Texto} \label{sec:met_normalizacao}
 
 O teclado do aplicativo tem apenas as 26 letras, sem acentos, e quatro teclas de ação (FALAR, ESPAÇO, APAGAR e LIMPAR), enquanto o \textit{corpus} é escrito com acentos e pontuação. Para que o texto digitado corresponda às palavras do \textit{corpus}, ambos passam pela mesma normalização: o texto é dividido em palavras nos sinais de pontuação, as palavras são convertidas para minúsculas, e os acentos, a cedilha e os hífens são removidos. Assim, ``ÁGUA'' e ``água'' tornam-se ``agua'', e ``ligue o ar-condicionado.'' torna-se a sequência ``ligue'', ``o'', ``arcondicionado''. As palavras com hífen são mantidas inteiras porque, sem uma tecla de hífen, o usuário não tem como digitar suas partes separadamente.
 
 A normalização não se perde na exibição: para cada palavra normalizada, o modelo guarda a grafia original mais frequente no \textit{corpus}. A sugestão é mostrada como ``água'' mesmo que o usuário tenha digitado ``AGU'' e, ao ser aceita, é inserida em maiúsculas, como o restante da mensagem, e com o acento (``ÁGUA'').
 
-\subsubsection{Modelo de Trigramas} \label{sec:met_modelo}
+\subsection{Modelo de Trigramas} \label{sec:met_modelo}
 
 O modelo é construído na inicialização do aplicativo a partir das frases do \textit{corpus}, sem arquivo de modelo pré-treinado. Cada frase normalizada recebe dois símbolos \texttt{<s>} no início (Seção~\ref{sec:ngramas}) e, para cada palavra, são incrementadas três tabelas de contagem: a da palavra após as duas anteriores (trigrama), após a anterior (bigrama) e sem contexto (unigrama), junto com o total de cada contexto. Essas tabelas fornecem diretamente os numeradores e denominadores da Equação~\ref{eq:mle_trigrama}. Diferentemente do usual~\cite[cap.~3]{jurafsky2026slp}, não é acrescentado o símbolo de fim de frase \texttt{</s>}, pois o fim da mensagem é indicado pelo próprio usuário, com a tecla FALAR, e nunca precisa ser sugerido.
 
@@ -76,9 +78,9 @@ As candidatas são pontuadas pelo \textit{Stupid Backoff} (Equação~\ref{eq:stu
 
 A escolha de um modelo de n-gramas, e não de um modelo neural, segue a discussão da Seção~\ref{sec:limitacoes_ngramas}: o modelo é construído em memória a partir de um \textit{corpus} pequeno, funciona sem conexão com a internet e é executado no próprio \textit{tablet}. A ordem do modelo e o fator $\alpha$ são parâmetros do módulo e podem ser alterados sem mudanças no restante do código.
 
-\subsubsection{Trie (trigramas)}
+\subsection{Trie (trigramas)}
 
-\subsubsection{Geração e Inserção das Sugestões} \label{sec:met_sugestoes}
+\subsection{Geração e Inserção das Sugestões} \label{sec:met_sugestoes}
 
 As três sugestões ficam em uma barra acima do teclado. A partir da primeira linha do teclado, o comando ``cima'' leva o foco à barra, os comandos ``esquerda'' e ``direita'' percorrem as sugestões e o comando de seleção insere a sugestão destacada. Cada sugestão a mais na lista exigiria mais comandos para ser alcançada, o que justifica uma lista curta (Seção~\ref{sec:preenchimento}). A forma de gerar as sugestões depende do texto digitado:
 \begin{itemize}
@@ -96,7 +98,7 @@ e as três maiores, de qualquer das duas leituras, são exibidas. A leitura de $
 
 Cada sugestão é devolvida com a indicação de qual das leituras a gerou, e uma única função do módulo, \texttt{accept}, a insere no texto: se a sugestão completa a palavra, ela substitui a parte digitada; caso contrário, é acrescentada depois dela. Em ambos os casos, a palavra é inserida em maiúsculas e seguida de um espaço, de modo que as próximas sugestões já sejam de próxima palavra. Assim, aceitar ``beber'' após ``EU QUERO B'' ou após ``EU QUERO'' produz o mesmo texto, ``EU QUERO BEBER''. Essa indicação precisa vir do modelo, porque o texto sozinho não distingue os casos: após ``E'', aceitar ``estou'' substitui a letra e produz ``ESTOU'', enquanto aceitar ``a'' a mantém e produz ``E A''. A mesma função é usada pela tela do aplicativo e pelo digitador simulado da avaliação offline.
 
-\subsubsection{Tolerância a Erros de Digitação} \label{sec:met_tolerancia}
+\subsection{Tolerância a Erros de Digitação} \label{sec:met_tolerancia}
 
 Na forma descrita até aqui, a completação exige que as letras digitadas sejam o início exato da palavra. Um único erro anula as sugestões: após ``EU QUERO BW'', digitado no lugar de ``EU QUERO BE'', nenhuma palavra do \textit{corpus} é compatível. Para corrigir o erro, o usuário precisa levar o foco até a tecla APAGAR, na última linha do teclado, e voltar às letras, e cada um desses passos é um comando dado com o olhar.
 
@@ -118,7 +120,7 @@ São toleradas palavras com $d(x, w) \le 1$, ou seja, com no máximo um erro, e 
 \end{equation}
 de modo que uma candidata exata quase sempre fica à frente de uma com erro, e as candidatas com erro ocupam, na prática, as vagas que sobram na lista. Com esses parâmetros, após ``EU QUERO BWB'' o modelo sugere ``beber'', já que W é vizinha de E, e a função \texttt{accept} substitui a palavra parcial inteira, com o erro, produzindo ``EU QUERO BEBER''. O mínimo de três letras e o fator $\beta$ foram escolhidos por uma varredura de valores na avaliação offline, apresentada no \refCap{5_Resultados}.
 
-\subsubsection{Avaliação Offline} \label{sec:met_avaliacao}
+\subsection{Avaliação Offline} \label{sec:met_avaliacao}
 
 Para medir o preenchimento automático antes dos testes com usuários e comparar versões do modelo, foi construída uma avaliação offline, sem usuários, em que um digitador simulado escreve as frases do \textit{corpus}. O digitador segue as mesmas regras da tela do aplicativo:
 \begin{itemize}
@@ -134,7 +136,7 @@ Para avaliar a tolerância a erros, o digitador tem também um modo com erros, e
 
 A avaliação é executada por uma ferramenta de linha de comando (\texttt{dart run tool/\allowbreak evaluate\_\allowbreak predictor.dart}), que imprime uma tabela com os cenários e pode salvar os resultados em JSON. Além dela, testes automatizados verificam a normalização, o \textit{backoff}, a geração e a inserção das sugestões e a tolerância a erros, e garantem que alterações no código não mudem o comportamento esperado.
 
-\subsection{Rastreamento Ocular (\texttt{gaze/})}
+\section{Rastreamento Ocular (\texttt{gaze/})}
 
 O pacote \texttt{gaze/} implementa o pipeline de estimativa do olhar e emissão de comandos por tempo de permanência fundamentado nas Seções~\ref{sec:eyetracking} a~\ref{sec:kalman}:
 
@@ -147,7 +149,7 @@ O pacote \texttt{gaze/} implementa o pipeline de estimativa do olhar e emissão 
     \item \texttt{GazeKalman}: aplica dois filtros de Kalman unidimensionais independentes, um para cada eixo da tela, segundo o modelo de velocidade constante da Equação~\ref{eq:kalman_matrizes}, utilizando o intervalo de tempo real $\Delta t$ entre quadros consecutivos para suavizar o ponto antes da verificação de permanência.
 \end{itemize}
 
-  \subsection{Síntese de Voz (\texttt{tts/})}
+  \section{Síntese de Voz (\texttt{tts/})}
 
 O pacote \texttt{tts/} isola a geração de fala offline descrita na Seção~\ref{sec:tts} por trás de uma interface comum:
 
@@ -156,7 +158,7 @@ O pacote \texttt{tts/} isola a geração de fala offline descrita na Seção~\re
     \item \texttt{KokoroSynthesizer}: implementação que executa o modelo Kokoro (voz \texttt{pf\_dora}) com o pacote \texttt{sherpa\_onnx}. Copia os arquivos do modelo dos \textit{assets} para o diretório local do aplicativo na primeira execução (validando-os pelo \texttt{manifest.json}), mantém o sintetizador nativo em uma \textit{isolate} dedicada para não bloquear a interface nem o rastreamento ocular durante a geração do áudio, grava o resultado em um arquivo \texttt{WAV} temporário reproduzido via \texttt{audioplayers} e impede a sobreposição de falas simultâneas.
 \end{itemize}
 
-  \subsection{Registro de Métricas e Avaliação (\texttt{metrics/})}
+  \section{Registro de Métricas e Avaliação (\texttt{metrics/})}
 
 O pacote \texttt{metrics/} concentra o registro das sessões de uso e o cálculo das métricas de avaliação fundamentadas na Seção~\ref{sec:metricas} e detalhadas na Seção~\ref{sec:met_metricas}:
 
