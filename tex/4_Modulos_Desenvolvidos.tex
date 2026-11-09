@@ -219,7 +219,7 @@ Em vez de converter o quadro completo de $640 \times 480$ pixels (307.200 pixels
     i_{ VU } = W\,H + \lfloor s_y / 2 \rfloor\,W + 2\,\lfloor s_x / 2 \rfloor.
     \label{eq:indices_nv21}
 \end{equation}
-A partir de $Y = \text{\texttt{bytes}}[i_Y]$, $V = \text{\texttt{bytes}}[i_{VU}] - 128$ e $U = \text{\texttt{bytes}}[i_{VU} + 1] - 128$, converte-se a cor para RGB normalizado em $[0, 1]$ segundo o padrão ITU-R BT.601 (Seção~\ref{sec:conversao_cores}) e escrevem-se as três componentes diretamente nas posições $i$, $S^2 + i$ e $2S^2 + i$ ($i = d_y S + d_x$) do \texttt{Float32List} de entrada do detector, já na ordem planar de canais (\texttt{NCHW}, Seção~\ref{sec:rgb}) exigida pelo modelo.
+A partir de $Y = \text{\texttt{bytes}}[i_Y]$, $V = \text{\texttt{bytes}}[i_{VU}] - 128$ e $U = \text{\texttt{bytes}}[i_{VU} + 1] - 128$, converte-se a cor para RGB pela forma de faixa completa da BT.601 (Equação~\ref{eq:yuv_rgb_completa}), a mesma com que os JPEG da base MPIIGaze foram decodificados no treino, limita-se cada componente a $[0, 255]$, divide-se por 255 e escrevem-se as três componentes diretamente nas posições $i$, $S^2 + i$ e $2S^2 + i$ ($i = d_y S + d_x$) do \texttt{Float32List} de entrada do detector, já na ordem planar de canais (\texttt{NCHW}, Seção~\ref{sec:rgb}) exigida pelo modelo.
 
 \subsection{Detecção da Pupila com YOLO26n} \label{sec:met_pupila}
 
