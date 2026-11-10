@@ -344,7 +344,7 @@ Como ``eu'' inicia as quatro frases, $P(\textrm{eu} \mid \texttt{<s>}\,\texttt{<
     \end{tabular}
 \end{table}
 
-O \textit{corpus} completo tem 565 frases, que somam 2.695 palavras e um vocabulário de 767 palavras distintas (sua construção é descrita no \refCap{3_Metodologia_e_Desenvolvimento}). As contagens são maiores, mas o cálculo é o mesmo: o contexto ``estou com'', por exemplo, aparece 27 vezes, 3 delas seguido de ``dor'', o que resulta em $P(\textrm{dor} \mid \textrm{estou com}) = 3/27 \approx 0{,}11$.
+O \textit{corpus} completo tem 565 frases, que somam 2.695 palavras e um vocabulário de 767 palavras distintas (sua construção é descrita na Seção~\ref{sec:met_corpus}). As contagens são maiores, mas o cálculo é o mesmo: o contexto ``estou com'', por exemplo, aparece 27 vezes, 3 delas seguido de ``dor'', o que resulta em $P(\textrm{dor} \mid \textrm{estou com}) = 3/27 \approx 0{,}11$.
 
 \subsection{Limitações dos N-Gramas} \label{sec:limitacoes_ngramas}
 
@@ -411,7 +411,7 @@ Os erros são classificados por Soukoreff e MacKenzie~\cite{soukoreff2003metrics
 \end{equation}
 Os erros corrigidos refletem esforço desperdiçado, enquanto os não corrigidos comprometem a qualidade do texto. Identificar estes últimos exige conhecer o texto que o usuário pretendia escrever, o que só é possível em testes com frases-alvo~\cite{soukoreff2003metrics}.
 
-Por fim, a qualidade da predição pode ser avaliada diretamente pela acurácia entre as $k$ primeiras sugestões (\textit{top-$k$}), definida como a fração das palavras do texto que apareceram entre as $k$ primeiras candidatas antes de serem concluídas. A forma como essas métricas são registradas e calculadas no aplicativo é descrita no \refCap{3_Metodologia_e_Desenvolvimento}.
+Por fim, a qualidade da predição pode ser avaliada diretamente pela acurácia entre as $k$ primeiras sugestões (\textit{top-$k$}), definida como a fração das palavras do texto que apareceram entre as $k$ primeiras candidatas antes de serem concluídas. A forma como essas métricas são registradas e calculadas no aplicativo é descrita na Seção~\ref{sec:met_metricas}.
 
 \subsection{Busca em Largura} \label{sec:bfs}
 
