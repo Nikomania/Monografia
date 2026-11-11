@@ -3,7 +3,29 @@
 \section{Testes com usuários reais}
     \subsection{Resultados com pessoas sem ELA}
 
-% TODO (Thiago): introduzir os testes T1, T2 e T3 (frases, condições, 5 iterações pelo olhar no Galaxy Tab S7).
+Antes dos testes com pessoas com ELA, o aplicativo foi usado pelo próprio autor, sem deficiência motora, em três testes curtos, chamados T1, T2 e T3. O objetivo não é avaliar a usabilidade com o público-alvo, mas verificar, com o rastreamento ocular real, que o módulo de métricas (Seção~\ref{sec:met_metricas}) registra as sessões de forma consistente e observar como o desempenho evolui com a prática. % TODO (Thiago): confirmar se o autor foi o único participante.
+Cada teste consiste em escrever uma frase-alvo e falá-la, e as frases foram escolhidas para exercitar partes diferentes do aplicativo, como resume a Tabela~\ref{tab:testes_t1t3}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Testes T1, T2 e T3: frase-alvo, funções exercitadas, número mínimo de comandos pelo roteiro, linha de base letra a letra e economia de comandos esperada.}
+    \label{tab:testes_t1t3}
+    \begin{tabular}{lp{3.4cm}p{4.6cm}ccc}
+        \hline
+        Teste & Frase-alvo & Funções exercitadas & Mínimo & Linha de base & Economia \\
+        \hline
+        T1 & \raggedright SIM & \raggedright digitação letra a letra, sem sugestões & 19 & 19 & 0\% \\
+        T2 & \raggedright EU QUERO BEBER ÁGUA & \raggedright sugestão que completa a palavra e previsão da próxima palavra & 18 & 97 & 81,4\% \\
+        T3 & \raggedright ESTOU COM DOR DE CABEÇA & \raggedright sugestão com a mensagem vazia, previsão da próxima palavra, palavra completada, tolerância a erro de digitação e acento & 35 & 107 & 67,3\% \\
+        \hline
+    \end{tabular}
+\end{table}
+
+O T1 é a própria linha de base: a palavra é digitada letra a letra, mesmo quando aparece na barra de sugestões, e o mínimo de comandos coincide com o custo sem sugestões, de modo que a economia esperada é nula. No T2, apenas a letra E é digitada, e as quatro palavras são inseridas pela barra, a primeira completando o E. O T3 reúne, em uma só frase, as situações descritas na Seção~\ref{sec:met_sugestoes}: ESTOU é aceita com a mensagem vazia, COM e DE são previstas como próxima palavra, DOR completa a letra D, e CABEÇA é sugerida depois de digitadas, de propósito, as letras CSB, com S, vizinha de A, no lugar desta (Seção~\ref{sec:met_tolerancia}). Para cada teste, um roteiro fixou a sequência de comandos de menor custo. Os valores esperados das métricas foram obtidos executando esse roteiro com as mesmas regras da tela e a mesma classe \texttt{TypingMetrics}, como na avaliação offline (Seção~\ref{sec:met_avaliacao}), e conferidos com sessões sem desvios executadas em um emulador, que os reproduziram exatamente. As duas frases com sugestões fazem parte do \textit{corpus} de treino, e por isso a economia esperada é bem maior que a obtida com frases inéditas na avaliação offline.
+
+Os testes foram feitos em um Samsung Galaxy Tab S7 (SM-T875), com todos os comandos emitidos pelo olhar, com tempo de permanência de 1,5~s, e sem toques na tela. Cada teste foi repetido cinco vezes em seguida, e cada repetição, chamada aqui de iteração, foi uma sessão nova: o aplicativo era fechado e aberto novamente, com calibração, mensagem vazia e foco na tecla Q. O T1 foi feito em 9 de novembro de 2026 e o T2 e o T3 em 11 de novembro de 2026, e as cinco iterações de cada teste ocuparam entre 15 e 30 minutos. Desvios do roteiro, como um comando disparado na direção errada, podiam ser corrigidos durante a própria iteração, e nas 15 sessões a frase falada foi a frase-alvo. % TODO (Thiago): condições de uso (distância até o tablet, apoio, iluminação), se relevantes.
+
+Além das métricas calculadas pelo aplicativo (Seção~\ref{sec:met_metricas}), três medidas foram obtidas refazendo a navegação a partir do log de eventos, com as regras da tela. A primeira é a eficiência de navegação, a razão entre o número mínimo de comandos para acionar, na mesma ordem, as teclas e sugestões que a pessoa de fato acionou, calculado por busca em largura (Seção~\ref{sec:bfs}), e o número de comandos usados. Ela difere da economia de comandos (Equação~\ref{eq:economia}), que compara a sessão com a digitação letra a letra: a eficiência julga apenas a navegação, dadas as escolhas feitas, e vale 100\% quando nenhum comando é desperdiçado, mesmo que a pessoa tenha digitado uma letra a mais ou corrigido um erro. A segunda é a mediana do intervalo entre comandos consecutivos, que, ao contrário do tempo médio $S/C$, não é dominada por algumas pausas longas. A terceira é a contagem de dois tipos de comando desperdiçado: as reversões, em que um comando é seguido imediatamente do seu oposto, como ``cima'' e ``baixo'', e as entradas na barra de sugestões que terminam sem nenhuma sugestão aceita. A \refFig{fig:grafico_iteracoes} mostra a evolução dessas medidas ao longo das cinco iterações de cada teste.
 
 \begin{figure}[!htbp]
     \centering
