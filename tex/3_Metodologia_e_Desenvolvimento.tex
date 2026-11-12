@@ -1,9 +1,32 @@
 \section{Pesquisas}
 
 \section{Setup do Ambiente de Desenvolvimento}
+
+Esta seção descreve as ferramentas e práticas que compuseram o ambiente de desenvolvimento do sistema. São apresentados os ambientes de desenvolvimento integrado (\acrshort{IDE}s, do inglês \textit{Integrated Development Environments}) utilizados e os motivos de sua escolha, o fluxo de controle de versões adotado pelos autores, baseado em Git e GitHub, e a forma como ferramentas de inteligência artificial foram empregadas como apoio ao desenvolvimento.
     \subsection{IDE Utilizada}
+
+O desenvolvimento foi conduzido em dois ambientes de desenvolvimento integrado: o Visual Studio Code (VS Code)~\cite{vscode_docs} e o Cursor~\cite{cursor_docs}. O VS Code é um editor de código-fonte gratuito e de código aberto mantido pela Microsoft, cuja funcionalidade é ampliada por meio de extensões. O Cursor é derivado do VS Code e preserva sua interface, seus atalhos e a compatibilidade com o mesmo ecossistema de extensões, de modo que a alternância entre os dois ambientes não exigiu nenhuma adaptação no projeto ou na forma de trabalho. Os recursos de \gls{IA} integrados ao Cursor e VS Code são discutidos na Seção~\ref{sec:uso_ia}.
+
+A escolha desses ambientes se deu por dois motivos. O primeiro foi a familiaridade prévia com o VS Code, o que eliminou o tempo de adaptação a uma nova ferramenta. O segundo foi a disponibilidade das extensões oficiais Dart e Flutter~\cite{dart_code_vscode}, mantidas pelo projeto Dart-Code, que facilitaram o processo de desenvolvimento ao integrar ao editor as ferramentas da linguagem e do \textit{framework}~\cite{flutter_docs}. Entre os recursos oferecidos por essas extensões, destacam-se:
+
+\begin{itemize}
+    \item análise estática e realce de erros em tempo real, aplicando as regras definidas no \texttt{analysis\_options.yaml};
+    \item autocompletar, navegação até definições, refatorações e formatação automática do código Dart;
+    \item seleção do dispositivo de execução e depuração do aplicativo diretamente no \textit{tablet} Android conectado, com pontos de parada e inspeção de variáveis;
+    \item recarga instantânea (\textit{hot reload}) ao salvar os arquivos, que aplica as alterações de interface sem reiniciar o aplicativo nem refazer a calibração;
+    \item execução e depuração individual dos testes automatizados do diretório \texttt{test/};
+    \item acesso ao Flutter DevTools para inspeção da árvore de \textit{widgets} e análise de desempenho.
+\end{itemize}
     \subsection{Github e Controle de Versão}
-        % \subsubsection{Branchs}
+
+O controle de versões do sistema foi feito com o Git~\cite{git_docs}, um sistema de controle de versões distribuído que registra o histórico de alterações do código e permite que vários desenvolvedores trabalhem em paralelo sobre o mesmo projeto. O repositório foi hospedado no GitHub~\cite{github_docs}, plataforma que, além de armazenar uma cópia remota do repositório, oferece ferramentas de colaboração como a revisão de código.
+
+O fluxo de trabalho adotado manteve na \textit{branch} \texttt{master} uma versão estável do sistema, isto é, uma versão que compila e executa corretamente no \textit{tablet}. O desenvolvimento de cada nova funcionalidade ou correção foi feito em uma \textit{branch} própria, criada a partir da \texttt{master}, o que permitiu que os dois autores trabalhassem em funcionalidades diferentes ao mesmo tempo sem que alterações incompletas afetassem a versão estável.
+    \subsection{Utilização de IA no Desenvolvimento} \label{sec:uso_ia}
+
+Ferramentas de inteligência artificial generativa foram utilizadas durante o desenvolvimento do sistema, principalmente por meio dos recursos de assistência integrados ao Cursor e VS Code. Os modelos empregados foram, sobretudo, os da família Claude, desenvolvidos pela Anthropic~\cite{anthropic_claude}: o Claude Opus, aplicado a tarefas que exigiam maior capacidade de raciocínio, como a análise de trechos de código mais extensos e a discussão de alternativas de implementação, e o Claude Haiku, um modelo mais leve e rápido, aplicado a tarefas pontuais e de menor complexidade.
+
+A \gls{IA} foi adotada como uma ferramenta de aceleração do desenvolvimento, e não como desenvolvedora autônoma da aplicação. Os dois autores possuem conhecimento das tecnologias empregadas no projeto e foram responsáveis por todas as decisões tomadas sobre o sistema, incluindo a arquitetura, a escolha das bibliotecas e dos modelos, a organização dos módulos e as escolhas de código. As sugestões geradas pelos modelos foram tratadas como propostas: cada uma foi lida, compreendida e avaliada pelos autores antes de ser incorporada, sendo ajustada ou descartada quando não atendia aos requisitos do sistema. Dessa forma, a \gls{IA} contribuiu principalmente para reduzir o tempo gasto em tarefas repetitivas, como a escrita de código estrutural, de testes automatizados e de documentação, além de apoiar a consulta à documentação das bibliotecas utilizadas, enquanto a autoria e a responsabilidade técnica sobre o sistema permaneceram integralmente com os autores.
 
 \section{Arquitetura do Software} \label{sec:arquitetura}
 
@@ -42,5 +65,3 @@ A preparação dos dados, o treinamento do modelo de detecção de pupila (\text
     \end{itemize}
     \item \texttt{runs/}: diretório onde são gravados os resultados de cada execução de treinamento (\texttt{runs/pupil\_yolo/}), contendo os pesos finais (\texttt{weights/best.pt}), o histórico de perdas e métricas por época (\texttt{results.csv}), os gráficos e relatórios da avaliação em teste (\texttt{eval\_test/}) e os modelos convertidos (\texttt{export/}).
 \end{itemize}
-
-\section{Utilização de IA no Desenvolvimento}
