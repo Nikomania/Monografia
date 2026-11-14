@@ -76,7 +76,7 @@ Como um modelo de n-gramas reflete o gênero dos textos em que foi treinado (Se�
 As 550 frases dos arquivos foram geradas com o auxílio de uma ferramenta de inteligência artificial generativa. % TODO: nome da ferramenta e se as frases foram revisadas manualmente
 Elas cobrem sintomas e desconfortos (``Estou com dor de cabeça'', ``Estou com falta de ar''), cuidados e posicionamento do corpo (``Mova o meu braço direito'', ``Ajuste a máscara de oxigênio''), controle do ambiente (``Abra a janela''), entretenimento (``Coloque um áudio para eu ouvir''), contato com outras pessoas (``Ligue para a minha sobrinha''), respostas curtas (``Sim'', ``Não'', ``Talvez'') e o controle da própria comunicação (``Terminei a frase'', ``Esquece o que eu disse''). No total, o \textit{corpus} soma 2.695 palavras, com média de 4,8 palavras por frase e vocabulário de 767 palavras distintas, e não contém frases repetidas.
 
-O uso de frases geradas é uma limitação deste trabalho: elas não foram produzidas por usuários de \gls{CAA}, e o vocabulário e a frequência das palavras refletem as escolhas do gerador, e não o uso real. Por isso, a avaliação offline (Seção~\ref{sec:met_avaliacao}) mede a capacidade do modelo de prever frases desse mesmo conjunto, e não necessariamente a comunicação de pessoas com \gls{ELA}, que só pode ser observada nos testes com usuários (\refCap{5_Resultados}).
+O uso de frases geradas é uma limitação deste trabalho: elas não foram produzidas por usuários de \gls{CAA}, e o vocabulário e a frequência das palavras refletem as escolhas do gerador, e não o uso real. Por isso, a avaliação offline (Seção~\ref{sec:met_avaliacao}) mede a capacidade do modelo de prever frases desse mesmo conjunto, e não necessariamente a comunicação de pessoas com \gls{ELA}, que só pode ser observada em testes com o público-alvo, deixados como trabalho futuro (Seção~\ref{sec:res_limitacoes}).
 
 \subsection{Tratamento do Texto} \label{sec:met_normalizacao}
 
@@ -136,7 +136,7 @@ de modo que uma candidata exata quase sempre fica à frente de uma com erro, e a
 
 \subsection{Avaliação Offline} \label{sec:met_avaliacao}
 
-Para medir o preenchimento automático antes dos testes com usuários e comparar versões do modelo, foi construída uma avaliação offline, sem usuários, em que um digitador simulado escreve as frases do \textit{corpus}. O digitador segue as mesmas regras da tela do aplicativo:
+Para medir o preenchimento automático antes dos testes de uso e comparar versões do modelo, foi construída uma avaliação offline, sem usuários, em que um digitador simulado escreve as frases do \textit{corpus}. O digitador segue as mesmas regras da tela do aplicativo:
 \begin{itemize}
     \item o foco começa na primeira tecla, com a mensagem vazia, e a frase termina com a tecla FALAR;
     \item a navegação é feita por setas e, como as linhas do teclado têm comprimentos diferentes, a coluna é limitada ao tamanho da linha de destino;

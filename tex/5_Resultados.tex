@@ -1,9 +1,15 @@
-\section{Testes de desenvolvimento}
-\section{Testes do MVP}
-\section{Testes com usuários reais}
-    \subsection{Resultados com pessoas sem ELA} \label{sec:res_sem_ela}
+Este capítulo apresenta os resultados do sistema em duas etapas. A primeira é a avaliação offline do preenchimento automático, feita com um digitador simulado (Seção~\ref{sec:met_avaliacao}). A segunda são os testes de uso, em que um dos autores usou o aplicativo no \textit{tablet}, controlando-o apenas pelo olhar. Não foram realizados testes com pessoas com \gls{ELA} nem com outros usuários do público-alvo; as consequências dessa escolha são discutidas na Seção~\ref{sec:res_limitacoes}.
 
-Antes dos testes com pessoas com ELA, o aplicativo foi usado pelo próprio autor, sem deficiência motora, em três testes curtos, chamados T1, T2 e T3. O objetivo não é avaliar a usabilidade com o público-alvo, mas verificar, com o rastreamento ocular real, que o módulo de métricas (Seção~\ref{sec:met_metricas}) registra as sessões de forma consistente e observar como o desempenho evolui com a prática. % TODO (Thiago): confirmar se o autor foi o único participante.
+\section{Avaliação Offline do Preenchimento Automático} \label{sec:res_offline}
+
+% TODO: resultados da avaliação offline (economia de comandos, acurácia top-1/top-3, palavras fora do vocabulário e modo com erros de digitação), prometidos nos Caps. 2 e 4.
+\textbf{[TODO: resultados da avaliação offline do preenchimento automático.]}
+
+\section{Testes de Uso} \label{sec:res_testes}
+
+    \subsection{Objetivo e Roteiro}
+
+Os testes de uso foram feitos por um dos autores, sem deficiência motora, em três testes curtos, chamados T1, T2 e T3. O objetivo não é avaliar a usabilidade com o público-alvo, mas verificar, com o rastreamento ocular real, que o módulo de métricas (Seção~\ref{sec:met_metricas}) registra as sessões de forma consistente e observar como o desempenho evolui com a prática.
 Cada teste consiste em escrever uma frase-alvo e falá-la, e as frases foram escolhidas para exercitar partes diferentes do aplicativo, como resume a Tabela~\ref{tab:testes_t1t3}.
 
 \begin{table}[htbp]
@@ -23,21 +29,29 @@ Cada teste consiste em escrever uma frase-alvo e falá-la, e as frases foram esc
 
 O T1 é a própria linha de base: a palavra é digitada letra a letra, mesmo quando aparece na barra de sugestões, e o mínimo de comandos coincide com o custo sem sugestões, de modo que a economia esperada é nula. No T2, apenas a letra E é digitada, e as quatro palavras são inseridas pela barra, a primeira completando o E. O T3 reúne, em uma só frase, as situações descritas na Seção~\ref{sec:met_sugestoes}: ESTOU é aceita com a mensagem vazia, COM e DE são previstas como próxima palavra, DOR completa a letra D, e CABEÇA é sugerida depois de digitadas, de propósito, as letras CSB, com S, vizinha de A, no lugar desta (Seção~\ref{sec:met_tolerancia}). Para cada teste, um roteiro fixou a sequência de comandos de menor custo. Os valores esperados das métricas foram obtidos executando esse roteiro com as mesmas regras da tela e a mesma classe \texttt{TypingMetrics}, como na avaliação offline (Seção~\ref{sec:met_avaliacao}), e conferidos com sessões sem desvios executadas em um emulador, que os reproduziram exatamente. As duas frases com sugestões fazem parte do \textit{corpus} de treino, e por isso a economia esperada é bem maior que a obtida com frases inéditas na avaliação offline.
 
+    \subsection{Condições de Execução}
+
 Os testes foram feitos em um Samsung Galaxy Tab S7 (SM-T875), com todos os comandos emitidos pelo olhar, com tempo de permanência de 1,5~s, e sem toques na tela. Cada teste foi repetido cinco vezes em seguida, e cada repetição, chamada aqui de iteração, foi uma sessão nova: o aplicativo era fechado e aberto novamente, com calibração, mensagem vazia e foco na tecla Q. O T1 foi feito em 9 de novembro de 2026 e o T2 e o T3 em 11 de novembro de 2026, e as cinco iterações de cada teste ocuparam entre 15 e 30 minutos. Desvios do roteiro, como um comando disparado na direção errada, podiam ser corrigidos durante a própria iteração, e nas 15 sessões a frase falada foi a frase-alvo. % TODO (Thiago): condições de uso (distância até o tablet, apoio, iluminação), se relevantes.
 
-Além das métricas calculadas pelo aplicativo (Seção~\ref{sec:met_metricas}), três medidas foram obtidas refazendo a navegação a partir do log de eventos, com as regras da tela. A primeira é a eficiência de navegação, a razão entre o número mínimo de comandos para acionar, na mesma ordem, as teclas e sugestões que a pessoa de fato acionou, calculado por busca em largura (Seção~\ref{sec:bfs}), e o número de comandos usados. Ela difere da economia de comandos (Equação~\ref{eq:economia}), que compara a sessão com a digitação letra a letra: a eficiência julga apenas a navegação, dadas as escolhas feitas, e vale 100\% quando nenhum comando é desperdiçado, mesmo que a pessoa tenha digitado uma letra a mais ou corrigido um erro. A segunda é a mediana do intervalo entre comandos consecutivos, que, ao contrário do tempo médio $S/C$, não é dominada por algumas pausas longas. A terceira é a contagem de dois tipos de comando desperdiçado: as reversões, em que um comando é seguido imediatamente do seu oposto, como ``cima'' e ``baixo'', e as entradas na barra de sugestões que terminam sem nenhuma sugestão aceita. A \refFig{fig:grafico_iteracoes} mostra a evolução dessas medidas ao longo das cinco iterações de cada teste.
+    \subsection{Medidas Complementares}
+
+Além das métricas calculadas pelo aplicativo (Seção~\ref{sec:met_metricas}), três medidas foram obtidas refazendo a navegação a partir do log de eventos, com as regras da tela. A primeira é a eficiência de navegação, a razão entre o número mínimo de comandos para acionar, na mesma ordem, as teclas e sugestões de fato acionadas no teste, calculado por busca em largura (Seção~\ref{sec:bfs}), e o número de comandos usados. Ela difere da economia de comandos (Equação~\ref{eq:economia}), que compara a sessão com a digitação letra a letra: a eficiência julga apenas a navegação, dadas as escolhas feitas, e vale 100\% quando nenhum comando é desperdiçado, mesmo que uma letra a mais tenha sido digitada ou corrigido um erro. A segunda é a mediana do intervalo entre comandos consecutivos, que, ao contrário do tempo médio $S/C$, não é dominada por algumas pausas longas. A terceira é a contagem de dois tipos de comando desperdiçado: as reversões, em que um comando é seguido imediatamente do seu oposto, como ``cima'' e ``baixo'', e as entradas na barra de sugestões que terminam sem nenhuma sugestão aceita.
+
+    \subsection{Evolução ao Longo das Iterações}
+
+A \refFig{fig:grafico_iteracoes} mostra a evolução dessas medidas ao longo das cinco iterações de cada teste.
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=\textwidth]{grafico_iteracoes.png}
-    \caption{Evolução das métricas ao longo das cinco iterações dos testes T1 (SIM), T2 (EU QUERO BEBER ÁGUA) e T3 (ESTOU COM DOR DE CABEÇA): duração, comandos, mediana de segundos por comando, eficiência de navegação, economia de comandos e palavras por minuto. Fonte: elaborado pelo autor.}
+    \caption{Evolução das métricas ao longo das cinco iterações dos testes T1 (SIM), T2 (EU QUERO BEBER ÁGUA) e T3 (ESTOU COM DOR DE CABEÇA): duração, comandos, mediana de segundos por comando, eficiência de navegação, economia de comandos e palavras por minuto. Fonte: elaborado pelos autores.}
     \label{fig:grafico_iteracoes}
 \end{figure}
 
 % TODO (Thiago): escrever a análise da \refFig{fig:grafico_iteracoes}.
 \textbf{[TODO: análise do gráfico das iterações (\refFig{fig:grafico_iteracoes}).]}
 
-\subsubsection{Comparação com trabalhos relacionados}
+    \subsection{Comparação com Trabalhos Relacionados}
 
 Os valores obtidos podem ser comparados, com cautela, aos de dois sistemas que também dispensam rastreadores oculares dedicados e usam o olhar em quatro direções, resumidos na Tabela~\ref{tab:comparacao_trabalhos}. No teclado virtual de Khaleel \textit{et al.}~\cite{khaleel2025}, uma \textit{webcam} e o MediaPipe estimam a direção do olhar, que move o destaque entre teclas dispostas em ordem alfabética, e o fechamento dos olhos seleciona a tecla destacada. Com 20 participantes, apenas um deles com deficiência, usando um \textit{notebook} a 35--50~cm da tela, e com frases do conjunto de MacKenzie e Soukoreff~\cite{mackenzie2003phrase} repetidas em oito sessões semanais, a taxa média foi de 18 caracteres por minuto, que os autores apresentam como 4 palavras por minuto; pelo critério de cinco caracteres por palavra adotado neste trabalho (Seção~\ref{sec:met_metricas}), isso corresponde a cerca de 3,6 palavras por minuto. No GazeSpeak, de Zhang \textit{et al.}~\cite{zhang2017gazespeak}, a câmera de um \textit{smartphone} reconhece um gesto ocular por caractere, em quatro direções, cada uma associada a um grupo de letras, e um mecanismo de predição desfaz a ambiguidade. Em duplas de pessoas sem deficiência, uma no papel de quem fala e outra no de intérprete, frases de cinco palavras (29 a 31 caracteres) levaram em média 80,9~s, contra mais de dois minutos com a prancha E-Tran; com 30 caracteres, isso corresponde a cerca de 4,4 palavras por minuto pelo mesmo critério.
 
@@ -51,7 +65,7 @@ Os valores obtidos podem ser comparados, com cautela, aos de dois sistemas que t
         \hline
         \raggedright Khaleel \textit{et al.}~\cite{khaleel2025} & \raggedright \textit{webcam} e \textit{notebook}; olhar em 4 direções move o destaque; fechar os olhos seleciona & \raggedright 20, um com deficiência & $\approx$3,6 \\
         \raggedright Zhang \textit{et al.}~\cite{zhang2017gazespeak} & \raggedright \textit{smartphone}; um gesto em 4 direções por caractere; teclado ambíguo com predição; intérprete & \raggedright 10 duplas, sem deficiência & $\approx$4,4 \\
-        \raggedright Este trabalho, T2 & \raggedright \textit{tablet}; olhar em 4 direções e permanência de 1,5~s; sugestões de palavras & \raggedright o autor, sem deficiência & 1,6--3,0 \\
+        \raggedright Este trabalho, T2 & \raggedright \textit{tablet}; olhar em 4 direções e permanência de 1,5~s; sugestões de palavras & \raggedright um dos autores, sem deficiência & 1,6--3,0 \\
         \raggedright Este trabalho, T1 e T3 & \raggedright idem, T1 letra a letra e T3 com erro proposital & \raggedright idem & 0,3--1,5 \\
         \hline
     \end{tabular}
@@ -59,6 +73,6 @@ Os valores obtidos podem ser comparados, com cautela, aos de dois sistemas que t
 
 O melhor resultado deste trabalho, cerca de 3,0 palavras por minuto nas três últimas iterações do T2, fica na mesma faixa desses sistemas, mas a comparação tem limites. As frases e o número de participantes são diferentes: o T2 é uma frase curta, do próprio \textit{corpus}, escrita quase toda pela barra de sugestões, o que favorece o aplicativo, enquanto o T1 e o T3, mais lentos, refletem a digitação letra a letra e a correção de erros. No GazeSpeak, o tempo inclui a decodificação feita pelo intérprete, e no trabalho de Khaleel \textit{et al.} a seleção é feita por piscada, e não por permanência. Os números indicam, portanto, que a velocidade do aplicativo é compatível com a de outros sistemas de baixo custo baseados em câmera, e não que ele seja mais rápido ou mais lento que eles.
 
-    \subsection{Resultados com pessoas com ELA}
-\section{Reunir métricas de digitação}
-\section{Análises Finais}
+\section{Limitações} \label{sec:res_limitacoes}
+
+Os testes de uso tiveram um único participante, um dos autores, que conhece o aplicativo e não tem deficiência motora. Os resultados mostram que o sistema funciona de ponta a ponta com o rastreamento ocular real e que o módulo de métricas registra as sessões de forma consistente, mas não permitem generalizar a velocidade nem o esforço para pessoas com \gls{ELA}, cujo controle do olhar, cansaço e postura podem ser diferentes. Além disso, foram usadas apenas três frases, duas delas do próprio \textit{corpus} de treino, o que favorece as sugestões, e cinco iterações por teste, número suficiente para observar o aprendizado inicial, mas não o desempenho de um usuário experiente. A avaliação com o público-alvo, com mais participantes e frases fora do \textit{corpus}, fica como trabalho futuro (\refCap{6_Conclusoes}).
