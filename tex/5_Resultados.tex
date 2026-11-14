@@ -1,9 +1,4 @@
-Este capítulo apresenta os resultados do sistema em duas etapas. A primeira é a avaliação offline do preenchimento automático, feita com um digitador simulado (Seção~\ref{sec:met_avaliacao}). A segunda são os testes de uso, em que um dos autores usou o aplicativo no \textit{tablet}, controlando-o apenas pelo olhar. Não foram realizados testes com pessoas com \gls{ELA} nem com outros usuários do público-alvo; as consequências dessa escolha são discutidas na Seção~\ref{sec:res_limitacoes}.
-
-\section{Avaliação Offline do Preenchimento Automático} \label{sec:res_offline}
-
-% TODO: resultados da avaliação offline (economia de comandos, acurácia top-1/top-3, palavras fora do vocabulário e modo com erros de digitação), prometidos nos Caps. 2 e 4.
-\textbf{[TODO: resultados da avaliação offline do preenchimento automático.]}
+Este capítulo apresenta os resultados dos testes de uso, em que um dos autores usou o aplicativo no \textit{tablet}, controlando-o apenas pelo olhar. Não foram realizados testes com pessoas com \gls{ELA} nem com outros usuários do público-alvo; as consequências dessa escolha são discutidas na Seção~\ref{sec:res_limitacoes}.
 
 \section{Testes de Uso} \label{sec:res_testes}
 
@@ -27,7 +22,7 @@ Cada teste consiste em escrever uma frase-alvo e falá-la, e as frases foram esc
     \end{tabular}
 \end{table}
 
-O T1 é a própria linha de base: a palavra é digitada letra a letra, mesmo quando aparece na barra de sugestões, e o mínimo de comandos coincide com o custo sem sugestões, de modo que a economia esperada é nula. No T2, apenas a letra E é digitada, e as quatro palavras são inseridas pela barra, a primeira completando o E. O T3 reúne, em uma só frase, as situações descritas na Seção~\ref{sec:met_sugestoes}: ESTOU é aceita com a mensagem vazia, COM e DE são previstas como próxima palavra, DOR completa a letra D, e CABEÇA é sugerida depois de digitadas, de propósito, as letras CSB, com S, vizinha de A, no lugar desta (Seção~\ref{sec:met_tolerancia}). Para cada teste, um roteiro fixou a sequência de comandos de menor custo. Os valores esperados das métricas foram obtidos executando esse roteiro com as mesmas regras da tela e a mesma classe \texttt{TypingMetrics}, como na avaliação offline (Seção~\ref{sec:met_avaliacao}), e conferidos com sessões sem desvios executadas em um emulador, que os reproduziram exatamente. As duas frases com sugestões fazem parte do \textit{corpus} de treino, e por isso a economia esperada é bem maior que a obtida com frases inéditas na avaliação offline.
+O T1 é a própria linha de base: a palavra é digitada letra a letra, mesmo quando aparece na barra de sugestões, e o mínimo de comandos coincide com o custo sem sugestões, de modo que a economia esperada é nula. No T2, apenas a letra E é digitada, e as quatro palavras são inseridas pela barra, a primeira completando o E. O T3 reúne, em uma só frase, as situações descritas na Seção~\ref{sec:met_sugestoes}: ESTOU é aceita com a mensagem vazia, COM e DE são previstas como próxima palavra, DOR completa a letra D, e CABEÇA é sugerida depois de digitadas, de propósito, as letras CSB, com S, vizinha de A, no lugar desta (Seção~\ref{sec:met_tolerancia}). Para cada teste, um roteiro fixou a sequência de comandos de menor custo. Os valores esperados das métricas foram obtidos executando esse roteiro com as mesmas regras da tela e a mesma classe \texttt{TypingMetrics}, como na avaliação offline (Seção~\ref{sec:met_avaliacao}), e conferidos com sessões sem desvios executadas em um emulador, que os reproduziram exatamente. As duas frases com sugestões fazem parte do \textit{corpus} de treino, e por isso a economia esperada é maior do que seria com frases que o modelo não viu no treinamento.
 
     \subsection{Condições de Execução}
 
@@ -48,8 +43,45 @@ A \refFig{fig:grafico_iteracoes} mostra a evolução dessas medidas ao longo das
     \label{fig:grafico_iteracoes}
 \end{figure}
 
-% TODO (Thiago): escrever a análise da \refFig{fig:grafico_iteracoes}.
-\textbf{[TODO: análise do gráfico das iterações (\refFig{fig:grafico_iteracoes}).]}
+Os valores de cada iteração estão na Tabela~\ref{tab:iteracoes}. Nas 15 sessões, a frase falada foi a frase-alvo, e o módulo de métricas registrou todas elas sem falhas, o que cumpre o primeiro objetivo dos testes. De modo geral, os três testes melhoram ao longo das iterações, e a melhora fica mais clara a partir da terceira, à medida que a navegação pelo olhar se torna familiar. A exceção é a mediana do intervalo entre comandos, que oscila entre cerca de 2,5 e 3,5~s em todos os testes, sem tendência clara. Como o tempo de permanência é fixo em 1,5~s, o ganho de velocidade vem de usar menos comandos, e não de emitir cada comando mais depressa.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Métricas de cada iteração dos testes T1, T2 e T3: duração, comandos emitidos, eficiência de navegação, economia de comandos, palavras por minuto, mediana do intervalo entre comandos e comandos desperdiçados (reversões e entradas na barra sem aceitar sugestão). It.: iteração; Efic.: eficiência de navegação; Pal./min: palavras por minuto; Med.: mediana do intervalo entre comandos.}
+    \label{tab:iteracoes}
+    \small
+    \begin{tabular}{ccrrrrrrc}
+        \hline
+        Teste & It. & Duração (s) & Comandos & Efic. & Economia & Pal./min & Med. (s) & Rev./Barra \\
+        \hline
+        T1 & 1 & 139,1 & 37 & 73\% & $-$94,7\% & 0,26 & 3,09 & 3/1 \\
+           & 2 & 139,6 & 40 & 75\% & $-$110,5\% & 0,26 & 2,63 & 5/1 \\
+           & 3 & 131,6 & 31 & 61\% & $-$63,2\% & 0,27 & 2,99 & 3/0 \\
+           & 4 & 84,7 & 23 & 83\% & $-$21,1\% & 0,43 & 2,47 & 3/0 \\
+           & 5 & 52,4 & 19 & 100\% & 0,0\% & 0,69 & 2,66 & 0/0 \\
+        \hline
+        T2 & 1 & 141,0 & 29 & 62\% & 70,1\% & 1,62 & 3,49 & 3/3 \\
+           & 2 & 128,1 & 33 & 55\% & 66,0\% & 1,78 & 2,55 & 3/2 \\
+           & 3 & 76,1 & 20 & 90\% & 79,4\% & 3,00 & 3,43 & 2/1 \\
+           & 4 & 75,3 & 20 & 95\% & 79,4\% & 3,03 & 2,78 & 2/0 \\
+           & 5 & 79,0 & 20 & 100\% & 79,4\% & 2,89 & 3,03 & 0/0 \\
+        \hline
+        T3 & 1 & 328,5 & 74 & 46\% & 30,8\% & 0,84 & 3,47 & 8/2 \\
+           & 2 & 197,7 & 55 & 78\% & 48,6\% & 1,40 & 3,08 & 5/1 \\
+           & 3 & 301,1 & 75 & 55\% & 29,9\% & 0,92 & 2,73 & 12/1 \\
+           & 4 & 189,4 & 57 & 61\% & 46,7\% & 1,46 & 2,85 & 16/8 \\
+           & 5 & 277,1 & 60 & 68\% & 43,9\% & 1,00 & 3,31 & 9/2 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+O T1, apesar de ser apenas a palavra SIM, digitada letra a letra e sem sugestões, teve o pior desempenho inicial, porque foi o primeiro contato com a navegação pelo olhar. Nas duas primeiras iterações, a duração ficou em torno de 139~s, com 37 e 40 comandos para um mínimo de 19, e houve letras erradas que precisaram ser apagadas, de modo que a economia ficou negativa ($-$94,7\% e $-$110,5\%): a sessão custou quase o dobro da digitação letra a letra. A partir da terceira iteração, os erros desapareceram e o número de comandos caiu para 31, 23 e, na quinta, exatamente o mínimo de 19, com eficiência de navegação de 100\%, nenhuma reversão e duração de 52,4~s, 2,7 vezes menor que a inicial. A eficiência da terceira iteração (61\%) foi a mais baixa do teste, porque, sem erros, os comandos excedentes vieram todos da navegação; a melhora da navegação aparece na quarta e na quinta iterações. As palavras por minuto subiram de 0,26 para 0,69, mas continuam baixas mesmo na sessão perfeita, por uma razão estrutural: as três letras de SIM e a tecla FALAR exigem 19 comandos, e, com cerca de 2,7~s por comando, o teste dura perto de 50~s para apenas três caracteres. As últimas iterações do T1 representam melhor o desempenho real de quem já conhece o aplicativo e digita sem sugestões.
+
+O T2 começou em um patamar melhor, já com a experiência adquirida no T1: 29 comandos para um mínimo de 18 e uma economia de 70,1\%, ainda que a primeira iteração tenha durado 141,0~s, com três entradas na barra sem aceitar nenhuma sugestão. Assim como no T1, a melhora mais clara aparece a partir da terceira iteração: a duração caiu para cerca de 76~s, os comandos estabilizaram em 20, a eficiência de navegação subiu de 55--62\% para 90--100\%, e a economia de comandos passou a 79,4\%, próxima dos 81,4\% esperados, e ficou constante nas três últimas iterações. Os dois comandos acima do mínimo dessas iterações vieram de uma letra a mais digitada e apagada, e não da navegação, como mostra a eficiência de 100\% na quinta iteração. O maior destaque são as palavras por minuto, que subiram de 1,62 para cerca de 3,0, o melhor valor dos três testes e de quatro a onze vezes o do T1, porque quase toda a frase foi inserida pela barra de sugestões. A mediana do intervalo entre comandos oscilou de forma parecida com a do T1, entre 2,55 e 3,49~s, sem ficar abaixo dela. No conjunto, o T2 teve o melhor desempenho, o que é coerente com o fato de ele usar o preenchimento automático em todas as palavras.
+
+O T3 teve a maior duração e o maior número de comandos em todas as iterações, entre 189,4 e 328,5~s e entre 55 e 75 comandos, para um mínimo de 35. A frase tem tamanho parecido com a do T2, mas o roteiro impõe mais restrições: a letra D precisa ser digitada antes de DOR ser sugerida, e CABEÇA só aparece depois das letras CSB, digitadas com um erro proposital. Por isso, o T3 é o teste mais próximo do uso real, em que nem todas as palavras desejadas são sugeridas de imediato. Além do erro previsto, houve letras erradas apagadas na segunda, na terceira e na quinta iterações, e o teste concentrou a maior parte dos comandos desperdiçados: de 5 a 16 reversões por sessão e, na quarta iteração, oito entradas na barra sem aceitar sugestão. O desempenho alternou entre iterações melhores e piores, em vez de melhorar continuamente. A eficiência de navegação foi mais alta na segunda iteração (78\%), o que pode ser explicado pela prática acumulada nos testes anteriores, caiu para 55\% na terceira e voltou a subir na quarta e na quinta, chegando a 68\%. A economia de comandos variou entre 29,9\% e 48,6\%, sempre abaixo dos 67,3\% esperados e dos valores do T2, e a diferença em relação ao esperado corresponde aos comandos desperdiçados na navegação. A mediana do intervalo entre comandos caiu de 3,47~s para 2,73~s na terceira iteração, mas voltou a 3,31~s na quinta, oscilando, como nos outros testes, dentro da mesma faixa. As palavras por minuto ficaram entre 0,84 e 1,46, entre as do T1 e as do T2.
+
+Comparados entre si, os testes ordenam-se como esperado. O T2, apoiado inteiramente nas sugestões, foi o mais rápido e o mais econômico. O T1 foi o mais lento em palavras por minuto, tanto por ter sido o primeiro, feito ainda sem familiaridade com a navegação, quanto pelo custo fixo de navegar até cada letra e até FALAR, que pesa muito em uma palavra de três letras. O T3 ficou entre os dois, porque usa as sugestões em todas as palavras, mas precisa de letras digitadas para chegar a duas delas e acumulou mais comandos desperdiçados. Em todos os testes, a mediana estável indica que o ritmo de cada comando é limitado pelo tempo de permanência, e que os ganhos dependem de errar menos, navegar por caminhos mais curtos e aproveitar as sugestões.
 
     \subsection{Comparação com Trabalhos Relacionados}
 
