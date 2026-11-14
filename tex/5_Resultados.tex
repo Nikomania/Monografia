@@ -26,7 +26,16 @@ O T1 é a própria linha de base: a palavra é digitada letra a letra, mesmo qua
 
     \subsection{Condições de Execução}
 
-Os testes foram feitos em um Samsung Galaxy Tab S7 (SM-T875), com todos os comandos emitidos pelo olhar, com tempo de permanência de 1,5~s, e sem toques na tela. Cada teste foi repetido cinco vezes em seguida, e cada repetição, chamada aqui de iteração, foi uma sessão nova: o aplicativo era fechado e aberto novamente, com calibração, mensagem vazia e foco na tecla Q. O T1 foi feito em 9 de novembro de 2026 e o T2 e o T3 em 11 de novembro de 2026, e as cinco iterações de cada teste ocuparam entre 15 e 30 minutos. Desvios do roteiro, como um comando disparado na direção errada, podiam ser corrigidos durante a própria iteração, e nas 15 sessões a frase falada foi a frase-alvo. % TODO (Thiago): condições de uso (distância até o tablet, apoio, iluminação), se relevantes.
+Cada sessão seguiu o fluxo de uso do aplicativo resumido na \refFig{fig:fluxo_uso}. Ao ser aberto, o aplicativo inicia a câmera e carrega os modelos, e a sessão começa pela calibração (Seção~\ref{sec:met_calibracao}), em que cada alvo é fixado com o olhar; se a calibração falha, ela é repetida. Calibrado o rastreamento, todo o uso se reduz a um ciclo: fixar o olhar em uma região da tela durante o tempo de permanência (Seção~\ref{sec:met_kalman_dwell}) emite um comando, que é uma seta, para mover a seleção no teclado ou na barra de sugestões, ou uma seleção, para ativar a tecla ou a sugestão em foco. Quando a tecla ativada é FALAR, a mensagem é convertida em fala pela síntese de voz (Seção~\ref{sec:met_tts}), e o ciclo recomeça para a mensagem seguinte. Nos testes, cada iteração percorreu esse fluxo uma vez, da abertura do aplicativo até a frase-alvo ser falada.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{fluxo}
+    \caption{Fluxo de uso do aplicativo no \textit{tablet}, seguido em cada iteração dos testes: preparação (abertura e calibração) e ciclo de uso pelo olhar, em que cada fixação emite um comando que move a seleção ou ativa o item em foco, até a tecla FALAR. Fonte: elaborado pelos autores.}
+    \label{fig:fluxo_uso}
+\end{figure}
+
+Os testes foram feitos em um Samsung Galaxy Tab S7 (SM-T875), com todos os comandos emitidos pelo olhar, com tempo de permanência de 1,5~s, e sem toques na tela. Cada teste foi repetido cinco vezes em seguida, e cada repetição, chamada aqui de iteração, foi uma sessão nova: o aplicativo era fechado e aberto novamente, com calibração, mensagem vazia e foco na tecla Q. O T1 foi feito em 9 de novembro de 2026 e o T2 e o T3 em 11 de novembro de 2026, e as cinco iterações de cada teste ocuparam entre 15 e 30 minutos. Desvios do roteiro, como um comando disparado na direção errada, podiam ser corrigidos durante a própria iteração. % TODO (Thiago): condições de uso (distância até o tablet, apoio, iluminação), se relevantes.
 
     \subsection{Medidas Complementares}
 
@@ -43,7 +52,7 @@ A \refFig{fig:grafico_iteracoes} mostra a evolução dessas medidas ao longo das
     \label{fig:grafico_iteracoes}
 \end{figure}
 
-Os valores de cada iteração estão na Tabela~\ref{tab:iteracoes}. Nas 15 sessões, a frase falada foi a frase-alvo, e o módulo de métricas registrou todas elas sem falhas, o que cumpre o primeiro objetivo dos testes. De modo geral, os três testes melhoram ao longo das iterações, e a melhora fica mais clara a partir da terceira, à medida que a navegação pelo olhar se torna familiar. A exceção é a mediana do intervalo entre comandos, que oscila entre cerca de 2,5 e 3,5~s em todos os testes, sem tendência clara. Como o tempo de permanência é fixo em 1,5~s, o ganho de velocidade vem de usar menos comandos, e não de emitir cada comando mais depressa.
+Os valores de cada iteração estão na Tabela~\ref{tab:iteracoes}. Nas 15 sessões, a frase falada foi a frase-alvo, e o módulo de métricas registrou todas elas sem falhas, o que cumpre o primeiro objetivo dos testes. Em todas elas, a fala gerada pela síntese de voz foi clara e correspondeu ao texto escrito, de modo que a mensagem composta pelo olhar chegou ao interlocutor como pretendido. De modo geral, os três testes melhoram ao longo das iterações, e a melhora fica mais clara a partir da terceira, à medida que a navegação pelo olhar se torna familiar. A exceção é a mediana do intervalo entre comandos, que oscila entre cerca de 2,5 e 3,5~s em todos os testes, sem tendência clara. Como o tempo de permanência é fixo em 1,5~s, o ganho de velocidade vem de usar menos comandos, e não de emitir cada comando mais depressa.
 
 \begin{table}[htbp]
     \centering
