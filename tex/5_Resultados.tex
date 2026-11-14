@@ -37,6 +37,28 @@ Além das métricas calculadas pelo aplicativo (Seção~\ref{sec:met_metricas}),
 % TODO (Thiago): escrever a análise da \refFig{fig:grafico_iteracoes}.
 \textbf{[TODO: análise do gráfico das iterações (\refFig{fig:grafico_iteracoes}).]}
 
+\subsubsection{Comparação com trabalhos relacionados}
+
+Os valores obtidos podem ser comparados, com cautela, aos de dois sistemas que também dispensam rastreadores oculares dedicados e usam o olhar em quatro direções, resumidos na Tabela~\ref{tab:comparacao_trabalhos}. No teclado virtual de Khaleel \textit{et al.}~\cite{khaleel2025}, uma \textit{webcam} e o MediaPipe estimam a direção do olhar, que move o destaque entre teclas dispostas em ordem alfabética, e o fechamento dos olhos seleciona a tecla destacada. Com 20 participantes, apenas um deles com deficiência, usando um \textit{notebook} a 35--50~cm da tela, e com frases do conjunto de MacKenzie e Soukoreff~\cite{mackenzie2003phrase} repetidas em oito sessões semanais, a taxa média foi de 18 caracteres por minuto, que os autores apresentam como 4 palavras por minuto; pelo critério de cinco caracteres por palavra adotado neste trabalho (Seção~\ref{sec:met_metricas}), isso corresponde a cerca de 3,6 palavras por minuto. No GazeSpeak, de Zhang \textit{et al.}~\cite{zhang2017gazespeak}, a câmera de um \textit{smartphone} reconhece um gesto ocular por caractere, em quatro direções, cada uma associada a um grupo de letras, e um mecanismo de predição desfaz a ambiguidade. Em duplas de pessoas sem deficiência, uma no papel de quem fala e outra no de intérprete, frases de cinco palavras (29 a 31 caracteres) levaram em média 80,9~s, contra mais de dois minutos com a prancha E-Tran; com 30 caracteres, isso corresponde a cerca de 4,4 palavras por minuto pelo mesmo critério.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Velocidade de entrada de texto de sistemas que usam câmeras comuns e o olhar em quatro direções, comparada aos testes T1--T3. As velocidades estão em palavras por minuto, com cinco caracteres por palavra.}
+    \label{tab:comparacao_trabalhos}
+    \begin{tabular}{p{3.2cm}p{5.4cm}p{3.0cm}c}
+        \hline
+        Trabalho & Sistema & Participantes & Palavras/min \\
+        \hline
+        \raggedright Khaleel \textit{et al.}~\cite{khaleel2025} & \raggedright \textit{webcam} e \textit{notebook}; olhar em 4 direções move o destaque; fechar os olhos seleciona & \raggedright 20, um com deficiência & $\approx$3,6 \\
+        \raggedright Zhang \textit{et al.}~\cite{zhang2017gazespeak} & \raggedright \textit{smartphone}; um gesto em 4 direções por caractere; teclado ambíguo com predição; intérprete & \raggedright 10 duplas, sem deficiência & $\approx$4,4 \\
+        \raggedright Este trabalho, T2 & \raggedright \textit{tablet}; olhar em 4 direções e permanência de 1,5~s; sugestões de palavras & \raggedright o autor, sem deficiência & 1,6--3,0 \\
+        \raggedright Este trabalho, T1 e T3 & \raggedright idem, T1 letra a letra e T3 com erro proposital & \raggedright idem & 0,3--1,5 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+O melhor resultado deste trabalho, cerca de 3,0 palavras por minuto nas três últimas iterações do T2, fica na mesma faixa desses sistemas, mas a comparação tem limites. As frases e o número de participantes são diferentes: o T2 é uma frase curta, do próprio \textit{corpus}, escrita quase toda pela barra de sugestões, o que favorece o aplicativo, enquanto o T1 e o T3, mais lentos, refletem a digitação letra a letra e a correção de erros. No GazeSpeak, o tempo inclui a decodificação feita pelo intérprete, e no trabalho de Khaleel \textit{et al.} a seleção é feita por piscada, e não por permanência. Os números indicam, portanto, que a velocidade do aplicativo é compatível com a de outros sistemas de baixo custo baseados em câmera, e não que ele seja mais rápido ou mais lento que eles.
+
     \subsection{Resultados com pessoas com ELA}
 \section{Reunir métricas de digitação}
 \section{Análises Finais}
